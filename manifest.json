@@ -1,0 +1,57 @@
+{
+  "name": "Web Terminal",
+  "version": "1.0.0",
+  "manifest_version": 2,
+  "description": "The web should also have its own terminal.",
+  "minimum_chrome_version": "21",
+  "icons": {
+    "16": "icons/16.png",
+    "48": "icons/48.png",
+    "128": "icons/128.png"
+  },
+  "author" : {
+    "name" : "mousedo",
+      "birth" : 2018
+  },
+  "browser_action": {
+    "default_icon": {
+      "19": "icons/19.png",
+      "38": "icons/38.png"
+    },
+    "default_title": "Web Terminal",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "scripts": ["js/libs/jquery-3.2.1.min.js", "js/libs/cron.js", "js/libs/chrome_api.js", "js/background.js"]
+  },
+  "web_accessible_resources": ["css/cmd.css"],
+  "content_scripts": [
+    { 
+      "matches": ["<all_urls>"], 
+      "all_frames": true, 
+      "js": [
+        "js/libs/jquery-3.2.1.min.js", "js/libs/chrome_api.js", "js/content/message.js"
+      ], 
+      "run_at": "document_start"
+    },
+    { 
+      "matches": ["<all_urls>"], 
+      "all_frames": false, 
+      "js": [
+        "js/content/content.js", "js/libs/minimist.js",
+        "js/syscmds.js", "js/cmds/search.js", "js/config.js", "js/commands.js", "js/cmd.js"
+      ], 
+      "run_at": "document_start"
+    }
+  ],
+  "commands": {
+    "toggle-cmdwin": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+0"
+      },
+      "description": "Toggle terminal window",
+      "global": true
+    }
+  },
+  "permissions":["*://*/*", "<all_urls>", "tabs", "storage", "webRequest", "bookmarks", "notifications", "history"]
+}
