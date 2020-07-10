@@ -29,7 +29,6 @@ var searchCmd = function()  {
                 }, nums*300);
             }
         }
-        cmdwin.displayOutput("");
     }
 }
 
@@ -125,7 +124,7 @@ var jsonCmd = function() {
                                 api_send_message({
                                     type: "selector",
                                     options: {
-                                        selector: configOption['selector'],
+                                        selector: configOption.triggers[idx]['selector'],
                                         url: configOption['url'],
                                         trigger: configOption.triggers[idx]['trigger']
                                     }

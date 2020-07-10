@@ -242,6 +242,7 @@ $.fn.extend({
       this.style         = 'dark',
       this.popup         = true,
       this.prompt_str    = '$ ',
+      this.autofill      = '',
       this.speech_synth_support = ('speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined'),
       this.options       = {
         busy_text:           'Communicating...',
@@ -313,6 +314,9 @@ $.fn.extend({
       this.wrapper.keydown($.proxy(this.handleKeyDown, this));
       this.wrapper.keyup($.proxy(this.handleKeyUp, this));
       this.wrapper.keydown($.proxy(this.handleKeyPress, this));
+      this.wrapper.find('.cmd-output').on('click', function(e) {
+        e.stopPropagation();
+      })
     }
   
     /**
@@ -368,19 +372,21 @@ $.fn.extend({
      * @param   string  cmd_out     The server output to write to screen
      */
     TerminalWin.prototype.displayOutput = function(cmd_out, encode) {
-      if (typeof cmd_out !== 'string') {
-        cmd_out = this.getErrorOutput('invalid cmd_out returned.');
+      switch (typeof cmd_out) {
+        case 'object':
+          cmd_out = JSON.stringify(cmd_out);
+          break;
+        case 'string':
+          break;
+        default:
+          cmd_out = this.getErrorOutput('invalid cmd_out returned. typeof is '+(typeof cmd_out));
       }
       
       if (encode) {
         cmd_out = htmlEncode(cmd_out)
       }
-  
-      if (this.output.html())  {
-        this.output.append('<br>');
-      }
 
-      this.output.append(cmd_out ? cmd_out + '<br>': cmd_out);
+      this.output.append('<code>'+cmd_out+'</code>');
   
       if (this.options.talk) {
         this.speakOutput(cmd_out);
@@ -388,11 +394,10 @@ $.fn.extend({
   
       this.cmd_stack.reset();
   
-      this.input.val('').removeAttr('disabled');
+      this.input.val(this.autofill).removeAttr('disabled');
   
       this.enableInput();
       this.focusOnInput();
-      this.activateAutofills();
     }
   
     /**
@@ -405,8 +410,8 @@ $.fn.extend({
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
   
-      this.output.append('<span class="prompt">' + this.prompt_str + '</span> ' +
-        '<span class="grey_text">' + cmd_in + '</span>');
+      this.output.append('<div><span class="prompt">' + this.prompt_str + '</span> ' +
+        '<span class="grey_text">' + cmd_in + '</span></div>');
     }
   
     /**
@@ -584,15 +589,14 @@ $.fn.extend({
       var keyCode = e.keyCode || e.which,
       input_str = $.trim(this.input.val()),
       autocompletions;
-      if (keyCode != 91 && !e.ctrlKey) {
+      // if (keyCode != 91 && keyCode != 17) {
         e.stopPropagation();
-      }
+      // }
 
       if (keyCode === 9) { //tab
         this.tabComplete(input_str);
       } else if (e.ctrlKey && keyCode == 67) {
         this.displayInput(input_str+"^C");
-        this.displayOutput('');
         return false;
       } else {
         this.autocompletion_attempted = false;
@@ -600,6 +604,7 @@ $.fn.extend({
           this.autocomplete_ajax.abort();
         }
         if (keyCode === 13) { // enter
+          this.autofill = '';
           if (input_str.charCodeAt(input_str.length-1) === 92) {
             input_str = input_str.substr(0, input_str.length-1)+"\n";
             this.input.val(input_str);
@@ -648,7 +653,7 @@ $.fn.extend({
      */
     TerminalWin.prototype.handleKeyUp = function(e) {
       var key = e.keyCode || e.which;
-      if (key != 91 && !e.ctrlKey) {
+      if (key != 91 && key != 17) {
         e.stopPropagation();
       }
 
@@ -664,9 +669,9 @@ $.fn.extend({
      */
     TerminalWin.prototype.handleKeyDown = function(e) {
       var key = e.keyCode || e.which;
-      if (key != 91 && !e.ctrlKey) {
+      // if (key != 91 && key != 17) {
         e.stopPropagation();
-      }
+      // }
       if ($.inArray(key, this.keys_array) > -1) {
         e.preventDefault();
   
@@ -792,21 +797,7 @@ $.fn.extend({
   
       this.showInputType();
   
-      this.input.val('');
-    }
-  
-    /**
-     * Attach click handlers to 'autofills' - divs which, when clicked,
-     * will insert text into the input
-     */
-    TerminalWin.prototype.activateAutofills = function() {
-      var input = this.input;
-  
-      this.wrapper
-        .find('[data-type=autofill]')
-        .on('click', function() {
-          input.val($(this).data('autofill'));
-        });
+      this.input.val(this.autofill);
     }
   
     /**
@@ -824,7 +815,7 @@ $.fn.extend({
     TerminalWin.prototype.enableInput = function() {
       this.input
         .removeAttr('disabled')
-        .val('');
+        .val(this.autofill);
     }
   
     /**

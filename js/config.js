@@ -1,7 +1,7 @@
 var syscmds = {
     "help": helpCmd,
     "ls": lsCmd,
-    "cd": cdCmd, 
+    // "cd": cdCmd, 
     "selector": selectorCmd,
     "js": jsCmd,
     "cron": cronCmd,
@@ -10,7 +10,7 @@ var syscmds = {
     // "pwd": pwdCmd,
     "clear": clearCmd,
     // "invert": invertCmd,
-    "talk": talkCmd,
+    // "talk": talkCmd,
 };
 
 var customcmds = {

@@ -9,72 +9,73 @@ function messageHandle(msg, sender, response) {
                 result = eval(code);
             }
         } else if (msg.type === 'selector') {
-            let selector = $(msg.options['selector']);
+            let selectorId = msg.options.hasOwnProperty('selector') ? msg.options['selector'] : msg.content[0];
+            let selector = $(selectorId);
             // fill or get content
             if (msg.options.hasOwnProperty("value")) {
                 if (typeof msg.options.value == "boolean") {
                     result = selector.val()
-                    console.log("result:", result);
+                    // console.log("result:", result);
                 } else {
-                    selector.val(msg.options.value)
+                    result = selector.val(msg.options.value)
                 }
             } else if (msg.options.hasOwnProperty("text")) {
                 if (typeof msg.options.text == "boolean") {
                     result = selector.text()
                 } else {
-                    selector.text(msg.options.text)
+                    result = selector.text(msg.options.text)
                 }
             } else if (msg.options.hasOwnProperty("html")) {
                 if (typeof msg.options.html == "boolean") {
                     result = selector.html()
                 } else {
-                    selector.html(msg.options.html)
+                    result = selector.html(msg.options.html)
                 }
             }
             // css event
             if (msg.options.hasOwnProperty("css")) {
-                if (msg.options.css.startWith("{")) {
-                    selector.css(JSON.parse(msg.options.css))
+                if (msg.options.css.startsWith("{")) {
+                    result = selector.css(JSON.parse(msg.options.css))
                 } else {
                     result = selector.css(msg.options.css)
                 }
             }
             // attr event
             if (msg.options.hasOwnProperty("attr")) {
-                if (msg.options.attr.startWith("{")) {
-                    selector.attr(JSON.parse(msg.options.attr))
+                if (msg.options.attr.startsWith("{")) {
+                    result = selector.attr(JSON.parse(msg.options.attr))
                 } else {
                     result = selector.attr(msg.options.attr)
                 }
             }
             if (msg.options.hasOwnProperty("removeAttr")) {
-                selector.removeAttr(msg.options.removeAttr)
+                result = selector.removeAttr(msg.options.removeAttr)
             }
             // prop event
             if (msg.options.hasOwnProperty("prop")) {
-                if (msg.options.prop.startWith("{")) {
-                    selector.prop(JSON.parse(msg.options.prop))
+                if (msg.options.prop.startsWith("{")) {
+                    result = selector.prop(JSON.parse(msg.options.prop))
                 } else {
                     result = selector.prop(msg.options.prop)
                 }
             }
             if (msg.options.hasOwnProperty("removeProp")) {
-                selector.removeProp(msg.options.removeProp)
+                result = selector.removeProp(msg.options.removeProp)
             }
             // class event
             if (msg.options.hasOwnProperty("addClass")) {
-                selector.addClass(msg.options.addClass)
+                result = selector.addClass(msg.options.addClass)
             }
             if (msg.options.hasOwnProperty("removeClass")) {
                 if (typeof msg.options.removeClass == "boolean") {
-                    selector.removeClass()
+                    result = selector.removeClass()
                 } else {
-                    selector.removeClass(msg.options.removeClass)
+                    result = selector.removeClass(msg.options.removeClass)
                 }
             }
             // trigger event
             if (msg.options.hasOwnProperty("trigger")) {
-                selector.trigger(msg.options['trigger'])
+                result = selector.trigger(msg.options['trigger'])
             }
         } else if (msg.type == "toggleCmdWin") {
             toggleCmdWin();
@@ -82,7 +83,6 @@ function messageHandle(msg, sender, response) {
             api_message_callback(msg);
         } else if (msg.type == 'cron-job') {
             let item = msg.item;
-            console.log(item);
             if (!window.shadowRoot) {
                 toggleCmdWin();
             }
@@ -91,6 +91,7 @@ function messageHandle(msg, sender, response) {
             }
             if (item.cmds.length > 0) {
                 item.cmds.forEach(cmd => {
+                    window.TerminalWin.autofill = window.TerminalWin.input.val();
                     window.TerminalWin.handleInput(cmd);
                 });
             }

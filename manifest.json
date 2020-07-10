@@ -1,6 +1,6 @@
 {
   "name": "Web Terminal",
-  "version": "1.0.0",
+  "version": "1.0.4",
   "manifest_version": 2,
   "description": "The web should also have its own terminal.",
   "minimum_chrome_version": "21",
@@ -11,7 +11,7 @@
   },
   "author" : {
     "name" : "mousedo",
-      "birth" : 2018
+      "birth" : 2020
   },
   "browser_action": {
     "default_icon": {

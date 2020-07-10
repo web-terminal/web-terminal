@@ -24,14 +24,13 @@ function showCmdWin() {
 }
 
 api_runtime_on_message_listener((msg, sender, response) => {
-    console.log(msg);
     messageHandle(msg, sender, response);
 });
 
 $(function() {
     var dblCtrlKey = 0;
-    $(document).on('keydown', function(event) {
-        if (event.keyCode == 91 || event.ctrlKey) {
+    $(document).on('keyup', function(event) {
+        if (event.keyCode == 91 || event.keyCode == 17) {
             if (dblCtrlKey != 0) {
                 toggleCmdWin()
             }

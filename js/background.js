@@ -16,14 +16,16 @@ api_runtime_on_message_listener(function(message, sender, callback) {
     case "js":
     case "selector":
         let sendMessage = function(tab) {
-            console.log("send tab id=", tab.id);
+            // console.log("send tab id=", tab.id);
             api_send_tab_message(tab.id, message, function(response) {
                 response_chan_set(message['UID'], response);
                 // console.log(response);
-                // api_send_callback_message(sender, message, message);
+                let callbackMessage = message;
+                callbackMessage['response'] = response;
+                api_send_callback_message(sender, message, callbackMessage);
             });
         }
-        console.log(message.options)
+        // console.log(message.options)
         if (message.options.hasOwnProperty('url')) {
             if (!tabChan.hasOwnProperty(message.options.url)) {
                 api_tab_create(message.options.url, function(tab) {
@@ -89,7 +91,7 @@ api_runtime_on_message_listener(function(message, sender, callback) {
         });
     break;
     case "cron-job":
-        console.log(message)
+        // console.log(message)
         let returnMessage = {data: 'ok'};
         if (message.options.type == 'list') {
             returnMessage.data = cronJobMaps;
@@ -128,11 +130,11 @@ api_runtime_on_message_listener(function(message, sender, callback) {
 
 // 监听键盘事件
 chrome.commands.onCommand.addListener(function(command) {
-    console.log('Command:', command);
+    // console.log('Command:', command);
     if (command == "toggle-cmdwin") {
         api_tab_current(function(tabs) {
             try {
-                console.log(tabs);
+                // console.log(tabs);
                 api_send_tab_message(
                     tabs[0].id,
                     {type: 'toggleCmdWin'},
@@ -140,7 +142,7 @@ chrome.commands.onCommand.addListener(function(command) {
                         if (info == undefined) {
                             api_tab_create('/main.html');
                         }
-                        console.log("callback", info)
+                        // console.log("callback", info)
                     }
                 )
             } catch (error) {
@@ -229,7 +231,7 @@ function cronItemRunStart(item) {
                     });
                 }
             } else {
-                console.log("api_send_tab_message", tab, {type: "cron-job", item: item});
+                // console.log("api_send_tab_message", tab, {type: "cron-job", item: item});
                 item.times++;
                 api_send_tab_message(tab.id, {type: "cron-job", item: item})
             }

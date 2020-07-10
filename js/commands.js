@@ -25,7 +25,7 @@ Command.prototype.Exec = function(cmdwin) {
     cmdwin.displayInput(shown_input);
     
     if (cmdwin.all_commands.hasOwnProperty(this.name)) {
-        console.log("this is system commands.", this.name+"Cmd");
+        // console.log("this is system commands.", this.name+"Cmd");
         cmdInstance = (new cmdwin.all_commands[this.name]());
         // change simple options to normal options
         this.TransferSimpleOptions(cmdInstance);
@@ -70,7 +70,7 @@ Command.prototype.InputParser = function(input_str) {
     }
     str && string_arr.push(str);
 
-    console.log(string_arr);
+    // console.log(string_arr);
     let args = Minimist(string_arr);
     for (let opt in args) {
         if (opt != '_') {

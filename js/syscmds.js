@@ -45,14 +45,14 @@ var clearCmd = function() {
     this.options = {
         screen: {
             simple: "s",
-            desc: "clear screen",
+            desc: "clear screen. <code>clear -s</code>",
         },
         history: {
             simple: "h",
-            desc: "clear history",
+            desc: "clear history. <code>clear -h</code>",
         }
     }
-    this.desc = 'clear datas';
+    this.desc = 'clear datas. useage <code>clear</code>';
     this.defaultOption = 'screen';
     this.Exec = function(command, cmdwin) {
         for (let option in command.options) {
@@ -141,29 +141,29 @@ var curlCmd = function() {
     this.options = {
         user: {
             simple: "u",
-            desc: "&lt;user:password&gt; Server user and password"
+            desc: "Usage: <code>curl http://api.xxx.com -u username:password</code> Server user and password"
         },
         header: {
             simple: "H",
-            desc: "&lt;header/@file&gt; Pass custom header(s) to server"
+            desc: "Usage: <code>curl http://api.xxx.com -H header1:v1 -H header2:v2</code> Pass custom header(s) to server"
         },
         get: {
             simple: "G",
-            desc: "Put the post data in the URL and use GET"
+            desc: "Usage: <code>curl http://api.xxx.com -G</code> Put the post data in the URL and use GET"
         },
         timeout: {
-            desc: "Set the seconds request timeout."
+            desc: "Usage: <code>curl http://api.xxx.com --timeout</code> Set the seconds request timeout."
         },
         data: {
             simple: "d",
-            desc: "&lt;data&gt; HTTP POST data"
+            desc: 'Usage: <code>curl http://api.xxx.com -d {"k1":v1, "k2":"v2"}</code> Or <code>curl http://api.xxx.com -d k1=v1&k2=v2</code> HTTP POST data'
         },
         include: {
             simple: "i",
-            desc: "Include protocol response headers in the output"
+            desc: "Usage: <code>curl http://api.xxx.com -i</code> Include protocol response headers in the output"
         }
     };
-    this.desc = "Usage: curl [options...] &lt;url&gt;";
+    this.desc = "Usage: <code>curl http://api.xxx.com -u username:password -d `{\"field\": \"value\"}` -i </code> Or <code>curl http://api.xxx.com -u username:password -d k1=v1&k2=v2&k3=v3 -i</code>";
     this.defaultOption = "get";
     this.Exec = function(command, cmdwin) {
         if (command.content.length < 0) {
@@ -189,7 +189,7 @@ var curlCmd = function() {
                 command.options.header.forEach(element => {
                     let keyval = element.split(':')
                     header[$.trim(keyval[0])] = keyval.length > 1 ? $.trim(keyval[1]) : true;
-                    console.log(keyval, header)
+                    // console.log(keyval, header)
                 });
                 ajaxConfig['header'] = header;
             }
@@ -305,8 +305,11 @@ var selectorCmd = function() {
             type: "selector",
             options: command.options,
             content: command.content,
+            callback: function(msg) {
+                cmdwin.displayOutput(msg.response);
+            }
         }, function(res) {
-            console.log("res: ", res);
+            // console.log("res: ", res);
             cmdwin.displayOutput("");
         });     
     }
@@ -329,8 +332,10 @@ var jsCmd = function() {
             type: "js",
             options: command.options,
             content: command.content,
+            callback: function(msg) {
+                cmdwin.displayOutput(msg.response);
+            }
         });
-        cmdwin.displayOutput("");
     }
 }
 
@@ -389,42 +394,42 @@ var cronCmd = function() {
     this.options = {
         list: {
             simple: "l",
-            desc: "show all the crontab tasks"
+            desc: "Useage: <code>cron -l</code> show all the crontab tasks"
         },
         add: {
             simple: "a",
-            desc: "Add a new contab task"
+            desc: "Useage: <code>cron `00 * * * * *` `js console.log(123);` -a</code> Add a new contab task"
         },
         delete: {
             simple: "D",
-            desc: "delete the specified contab task"
+            desc: "Useage: <code>cron 4f0wr4ynbs80 -D</code> delete the specified contab task"
         },
         showType: {
             simple: "s",
-            desc: "Update the show type when cron job excute. the options is background or frontend."
+            desc: "Useage: <code>cron 4f0wr4ynbs80 -s background</code> Update the show type when cron job excute. the options is background or frontend."
         },
         openType: {
             simple: "o",
-            desc: "Update the show type when cron job excute. the option is auto-open or open-only."
+            desc: "Useage: <code>cron 4f0wr4ynbs80 -o auto-open</code> Update the show type when cron job excute. the option is auto-open or open-only."
         },
         enabled: {
             simple: "e",
-            desc: "Update the enabled status. the options is true or false"
+            desc: "Useage: <code>cron 4f0wr4ynbs80 -e 0</code> Update the enabled status. the options is 0 or 1"
         },
         url: {
             simple: "u",
-            desc: "Update the host page url address."
+            desc: "Useage: <code>cron 4f0wr4ynbs80 -u http://www.google.com</code> Update the host page url address."
         },
         rule: {
             simple: "r",
-            desc: "Update the rule of cron."
+            desc: "Useage: <code>cron 4f0wr4ynbs80 -r `01 * * * * *`</code> Update the rule of cron."
         },
         cmds: {
             simple: "c",
-            desc: "Update the host page url address."
+            desc: "Useage: <code>cron 4f0wr4ynbs80 -c `time -t`</code> Update the host page url address."
         },
     }
-    this.desc = "Useage: <code>cron `*/3 * * * * *` `js console.log('hello WebTerminal!')`</code>";
+    this.desc = "Useage: <code>cron `*/3 * * * * *` \"js `console.log('hello WebTerminal!')`\" -a</code>";
     this.defaultOption = "list";
     this.Exec = function(command, cmdwin) {
         if (command.options.hasOwnProperty("list")) {
@@ -436,7 +441,7 @@ var cronCmd = function() {
                 callback: function(msg) {
                     let cronJobs = msg.data;
                     if (JSON.stringify(cronJobs) == '{}') {
-                        cmdwin.displayOutput("You have not added an cron job.")
+                        cmdwin.displayOutput("You haven't added cron tasks.")
                     } else {
                         let showStr = '<table width="100%"><tr><th>id</th><th>rule</th><th>cmds</th><th>enabled</th><th>showType</th><th>openType</th><th>times</th></tr>';
                         for (let id in cronJobs) {
@@ -456,7 +461,7 @@ var cronCmd = function() {
         } else if (command.options.hasOwnProperty("add")) {
             let cronRule = command.content[0];
             command.content.splice(0, 1)
-            console.log("add cron:", cronRule, command.content)
+            // console.log("add cron:", cronRule, command.content)
             api_send_message({
                 type: "cron-job",
                 options: {
@@ -469,11 +474,13 @@ var cronCmd = function() {
                 }
             });
         } else if (command.options.hasOwnProperty("delete")) {
+            let id = command.options.delete;
+            if (typeof id == "boolean") id = command.content[0];
             api_send_message({
                 type: "cron-job",
                 options: {
                     type: "delete",
-                    id: command.options.delete
+                    id: id
                 },
                 callback: function(msg) {
                     cmdwin.handleInput('cron -l');
@@ -522,6 +529,10 @@ var timeCmd = function() {
             simple: "t",
             desc: "Get timestamp. useage: <code>time `2020-07-04 14:00:00` -t</code>"
         },
+        microtimestamp: {
+            simple: "m",
+            desc: "Get micro timestamp. useage: <code>time `2020-07-04 14:00:00` -m</code>"
+        },
         date: {
             simple: "d",
             desc: "Get date. useage: <code>time `1593842041976` -d</code>"
@@ -539,22 +550,34 @@ var timeCmd = function() {
             } else {
                 timestamp = new Date().getTime()
             }
-            cmdwin.displayOutput(timestamp+'');
+            cmdwin.displayOutput(parseInt(timestamp/1000)+'');
+        }
+        if (command.options.hasOwnProperty('microtimestamp')) {
+            var microtimestamp = null;
+            if (typeof command.options.microtimestamp != "boolean") {
+                microtimestamp = new Date(command.options.microtimestamp).getTime();
+            } else if (command.content.length > 0) {
+                microtimestamp = new Date(command.content[0]).getTime();
+            } else {
+                microtimestamp = new Date().getTime()
+            }
+            cmdwin.displayOutput(microtimestamp+'');
         }
         if (command.options.hasOwnProperty('date')) {
-            let Pad = function(num, n) {
+            let Pad = function(num, n, right) {
                 var len = num.toString().length;
                 while(len < n) {
-                    num = "0" + num;
+                    if (right) num = num + "0";
+                    else num = "0" + num;
                     len++;
                 }
                 return num;
             }
             var date = new Date();
             if (typeof command.options.date != "boolean") {
-                date = new Date(parseInt(command.options.date));
+                date = new Date(parseInt(Pad(command.options.date, 13, 1)));
             } else if (command.content.length > 0) {
-                date = new Date(parseInt(command.content[0]));
+                date = new Date(parseInt(Pad(command.content[0], 13, 1)));
             }
 
             var year = date.getFullYear();
