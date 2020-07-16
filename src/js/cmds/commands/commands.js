@@ -29,6 +29,7 @@ Command.prototype.Exec = function(cmdwin) {
         cmdInstance = (new cmdwin.all_commands[this.name]());
         // change simple options to normal options
         this.TransferSimpleOptions(cmdInstance);
+        console.log(this.options, this.content)
         // exec this cmd
         cmdInstance.Exec(this, cmdwin)
         cmdwin.showInputType();

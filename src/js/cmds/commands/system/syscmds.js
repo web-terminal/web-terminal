@@ -239,7 +239,7 @@ var selectorCmd = function() {
             desc: "the operate element"
         },
         current: {
-            imple: ["c"],
+            simple: "c",
             desc: "it will operate current tab"
         },
         url: {
@@ -298,7 +298,7 @@ var selectorCmd = function() {
         }
     };
     this.defaultOption = "current";
-    this.desc = "Usage: selector #id [options]";
+    this.desc = "Usage: <code>selector #id -t</code>";
 
     this.Exec = function(command, cmdwin) {
         api_send_message({
@@ -308,9 +308,6 @@ var selectorCmd = function() {
             callback: function(msg) {
                 cmdwin.displayOutput(msg.response);
             }
-        }, function(res) {
-            // console.log("res: ", res);
-            cmdwin.displayOutput("");
         });     
     }
 }

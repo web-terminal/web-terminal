@@ -96,7 +96,6 @@ $.fn.extend({
         if (cmd === arr[arr.length - 1]) {
           return false;
         }
-        console.log(cmd);
         arr.push(cmd);
 
         // crop off excess
@@ -386,7 +385,7 @@ $.fn.extend({
         cmd_out = htmlEncode(cmd_out)
       }
 
-      this.output.append('<code>'+cmd_out+'</code>');
+      cmd_out && this.output.append('<code>'+cmd_out+'</code>');
   
       if (this.options.talk) {
         this.speakOutput(cmd_out);
@@ -640,8 +639,10 @@ $.fn.extend({
           }
   
           this.input.val(this.cmd_stack.prev());
+          this.resizeInput();
         } else if (keyCode === 40) { // down arrow
           this.input.val(this.cmd_stack.next());
+          this.resizeInput();
         } else if (keyCode === 27) { // esc
           // this.options.selector.toggle();
         }
@@ -674,7 +675,6 @@ $.fn.extend({
       // }
       if ($.inArray(key, this.keys_array) > -1) {
         e.preventDefault();
-  
         return false;
       }
       return true;
@@ -774,7 +774,6 @@ $.fn.extend({
      */
     TerminalWin.prototype.resizeInput = function() {
       var cmd_width = this.wrapper.width() - this.wrapper.find('.main-prompt').first().width() - 25;
-  
       this.input.css('width', cmd_width);
       this.focusOnInput();
     }

@@ -1,4 +1,4 @@
-function messageHandle(msg, sender, response) {
+function messageHandle(msg, sender, callback) {
     let result = "";
     try {
         // First, validate the message's structure.
@@ -6,6 +6,7 @@ function messageHandle(msg, sender, response) {
             for (let i in msg.content) {
                 // trim
                 let code = msg.content[i].replace(/(^\s*)|(\s*$)/g, "");
+                console.log(code);
                 result = eval(code);
             }
         } else if (msg.type === 'selector') {
@@ -101,7 +102,7 @@ function messageHandle(msg, sender, response) {
         console.log(result);
     }
     
-    response(result);
+    callback(result);
 }
 
 function toggleCmdWin() {

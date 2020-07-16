@@ -1,0 +1,36 @@
+{
+  "name": "web-terminal",
+  "version": "1.0.0",
+  "description": "Provide some convenient instructions to operate the browser, so that we can customize a lot of personalized functions, such as automatically monitoring whether the information of a website is updated, can automatically log in through the instruction, and automatically obtain the corresponding label of the page, so excited The function does not need to deal with the background server, everything is done in the browser, a completely localized program. Of course, if you can js, then you can do a lot of things.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/web-terminal/web-terminal.git"
+  },
+  "keywords": [
+    "terminal",
+    "web-terminal",
+    "chrome",
+    "extension"
+  ],
+  "author": "mouse-man",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/web-terminal/web-terminal/issues"
+  },
+  "homepage": "https://github.com/web-terminal/web-terminal#readme",
+  "devDependencies": {
+    "gulp": "^4.0.2",
+    "gulp-clean": "^0.4.0",
+    "gulp-concat": "^2.6.1",
+    "gulp-rename": "^2.0.0",
+    "gulp-uglify": "^3.0.2",
+    "gulp-watch": "^5.0.1"
+  },
+  "dependencies": {
+    "gulp-less": "^4.0.1"
+  }
+}

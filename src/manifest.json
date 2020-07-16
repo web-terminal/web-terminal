@@ -1,6 +1,6 @@
 {
   "name": "Web Terminal",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "manifest_version": 2,
   "description": "The web should also have its own terminal.",
   "minimum_chrome_version": "21",
@@ -22,7 +22,7 @@
     "default_popup": "popup.html"
   },
   "background": {
-    "scripts": ["js/libs/jquery-3.2.1.min.js", "js/libs/cron.js", "js/libs/chrome_api.js", "js/background.js"]
+    "scripts": ["js/libs/jquery-3.2.1.min.js", "js/libs/cron.min.js", "js/browser_api.js", "js/background.js"]
   },
   "web_accessible_resources": ["css/cmd.css"],
   "content_scripts": [
@@ -30,7 +30,7 @@
       "matches": ["<all_urls>"], 
       "all_frames": true, 
       "js": [
-        "js/libs/jquery-3.2.1.min.js", "js/libs/chrome_api.js", "js/content/message.js"
+        "js/libs/jquery-3.2.1.min.js", "js/browser_api.js", "js/content/message.js"
       ], 
       "run_at": "document_start"
     },
@@ -38,8 +38,8 @@
       "matches": ["<all_urls>"], 
       "all_frames": false, 
       "js": [
-        "js/content/content.js", "js/libs/minimist.js",
-        "js/syscmds.js", "js/cmds/search.js", "js/config.js", "js/commands.js", "js/cmd.js"
+        "js/content/content.js", "js/libs/minimist.min.js",
+        "js/cmd.js"
       ], 
       "run_at": "document_start"
     }
