@@ -17,13 +17,24 @@ api_runtime_on_message_listener(function(message, sender, callback) {
     case "selector":
         let sendMessage = function(tab) {
             // console.log("send tab id=", tab.id);
-            api_send_tab_message(tab.id, message, function(response) {
-                response_chan_set(message['UID'], response);
-                // console.log(response);
-                let callbackMessage = message;
-                callbackMessage['response'] = response;
-                api_send_callback_message(sender, message, callbackMessage);
-            });
+            if (message.type == 'js') {
+                let content = message.content.join('')
+                chrome.tabs.executeScript(tab.id, {code: content}, function(result) {
+                    for (let i in result) {
+                        let callbackMessage = message;
+                        callbackMessage['response'] = JSON.stringify(result[i]);
+                        api_send_callback_message(sender, message, callbackMessage);
+                    }
+                });
+            } else {
+                api_send_tab_message(tab.id, message, function(response) {
+                    response_chan_set(message['UID'], response);
+                    // console.log(response);
+                    let callbackMessage = message;
+                    callbackMessage['response'] = response;
+                    api_send_callback_message(sender, message, callbackMessage);
+                });
+            }
         }
         // console.log(message.options)
         if (message.options.hasOwnProperty('url')) {
