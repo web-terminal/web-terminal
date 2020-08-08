@@ -1,0 +1,8 @@
+{
+    "appName": {
+        "message": "WebTerminal"
+    },
+    "description": {
+        "message": "这是一个浏览器终端，你可以用它来完成一些自动化任务，如果你会js的话，那么它将是你强有力的工具。"
+    }
+}

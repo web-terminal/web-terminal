@@ -239,6 +239,7 @@ $.fn.extend({
     var TerminalWin = function (user_config) {
       this.keys_array    = [9, 13, 38, 40, 27],
       this.style         = 'dark',
+      this.output_init   = '<code><div>Welcome to <a href="https://github.com/web-terminal/web-terminal/wiki" target="_blank">Web-Terminal</a> v1.1.0</div><div>use <code>help</code> to show commands. <code>help js</code> to show js command instructions.</div></code>',
       this.popup         = true,
       this.prompt_str    = '$ ',
       this.autofill      = '',
@@ -249,35 +250,33 @@ $.fn.extend({
         filedrop_enabled:    false,
         // file_upload_url:     'ajax/uploadfile.php',
         history_id:          'cmd_history',
-        remote_cmd_list_url: '',
         selector:            '#cmd',
-        tabcomplete_url:     './commands.json',
         talk:                false,
         unknown_cmd:         'Unrecognised command',
         typewriter_time:     32
       },
       this.voices = false;
-      this.customcmds = customcmds;
+      this.customcmds = {};
       this.all_commands = syscmds;
       // this.syscmds = syscmds;
       this.autocompletion_attempted = false;
   
       $.extend(this.options, user_config);
-  
-      if (this.options.remote_cmd_list_url) {
-        $.ajax({
-          url: this.options.remote_cmd_list_url,
-          context: this,
-          dataType: 'json',
-          method: 'GET',
-          success: function (data) {
-            $.extend(this.customcmds, data);
-            $.extend(this.all_commands, this.customcmds);
+      
+      var self = this;
+      api_send_message({
+        type: 'cmdhub',
+        method: 'get_cmdhub',
+        callback: function(res) {
+          if (typeof res == 'object') {
+            $.extend(self.customcmds, res.meta.data);
+            for (let cmd in self.customcmds) {
+              self.all_commands[cmd] = self.customcmds[cmd]['index_func'];
+            }
           }
-        });
-      } else {
-        $.extend(this.all_commands, this.customcmds);
-      }
+        }
+      });
+      
       if (!$(this.options.selector).length) {
         throw 'Cmd err: Invalid selector.';
       }
@@ -376,6 +375,7 @@ $.fn.extend({
           cmd_out = JSON.stringify(cmd_out);
           break;
         case 'string':
+        case 'number':
           break;
         default:
           cmd_out = this.getErrorOutput('invalid cmd_out returned. typeof is '+(typeof cmd_out));
@@ -786,6 +786,7 @@ $.fn.extend({
   
       this.output = $('<div/>')
         .addClass('cmd-output')
+        .append(this.output_init)
         .appendTo(this.container);
   
       this.prompt_elem = $('<span/>')

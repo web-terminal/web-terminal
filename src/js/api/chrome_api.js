@@ -28,6 +28,7 @@ function api_send_message(message, callback) {
     chrome.runtime.sendMessage(message, callback)
 }
 function api_send_callback_message(sender, fromMessage, returnMessage) {
+    if (typeof returnMessage != 'object') api_send_callback_message = {};
     returnMessage['from'] = fromMessage['type'];
     returnMessage['type'] = 'messageCallback';
     returnMessage['UID'] = fromMessage['UID'];
@@ -72,12 +73,20 @@ function api_storage_on_change_listener(callback) {
     chrome.storage.onChanged.addListener(callback)
 }
 
+function api_tab_onupdated(callback) {
+    chrome.tabs.onUpdated.addListener(callback);
+}
+
 function api_tab_create(url, callback) {
     chrome.tabs.create({url: url}, callback);
 }
 
 function api_tab_get(tabId, callback) {
     chrome.tabs.get(tabId, callback);
+}
+
+function api_tab_update(tabId, data, callback) {
+    chrome.tabs.update(tabId, data, callback)
 }
 
 function api_tab_current(callback) {
@@ -102,4 +111,13 @@ function api_history_query(query, callback) {
 
 function api_notifications_create(options, callback) {
     chrome.notifications.create(options, callback);
+}
+
+function api_execute_script(tabId, details, callback) {
+    console.log(tabId, details);
+    chrome.tabs.executeScript(tabId, details, callback);
+}
+
+function api_manifest(callback) {
+    $.get(chrome.extension.getURL('manifest.json'), callback, 'json');
 }

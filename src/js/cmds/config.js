@@ -2,6 +2,7 @@ var syscmds = {
     "help": helpCmd,
     "ls": lsCmd,
     // "cd": cdCmd, 
+    "cmd": cmdCmd,
     "selector": selectorCmd,
     "js": jsCmd,
     "cron": cronCmd,
@@ -11,9 +12,9 @@ var syscmds = {
     "clear": clearCmd,
     // "invert": invertCmd,
     // "talk": talkCmd,
-};
+// };
 
-var customcmds = {
+// var customcmds = {
     "curl": curlCmd,
     "search": searchCmd, 
     "translate": translateCmd,

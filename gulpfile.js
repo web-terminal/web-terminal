@@ -23,6 +23,10 @@ function buildIcon() {
     return src("src/icons/*").pipe(dest("dest/icons/"));
 }
 
+function buildLocales() {
+    return src("src/_locales/**/*").pipe(dest("dest/_locales/"));
+}
+
 function buildLess() {
     return src("src/less/*.less").pipe(less()).pipe(dest("dest/css"));
 }
@@ -37,6 +41,12 @@ function buildLibJs() {
 function buildCmdJs() {
     return src(["src/js/cmds/commands/**/*.js", "src/js/cmds/config.js", "src/js/cmds/*.js"])
         .pipe(concat('cmd.js'))
+        .pipe(dest("dest/js/"));
+}
+
+function buildBackgroundJs() {
+    return src("src/js/background/*.js")
+        .pipe(concat('background.js'))
         .pipe(dest("dest/js/"));
 }
 
@@ -60,13 +70,15 @@ function taskWatch() {
     watch('./src/**/*.html', buildHtml);
     watch('./src/*.json', buildJson);
     watch('./src/icons/*', buildIcon);
+    watch('./src/_locales/**/*', buildLocales);
     watch('./src/less/*.less', buildLess);
     watch('./src/js/libs/*.js', buildLibJs);
+    watch('./src/js/background/*.js', buildBackgroundJs);
     watch('./src/js/cmds/**/*.js', buildCmdJs);
     watch('./src/js/*.js', buildCommonJs);
     watch('./src/js/content/*.js', buildContentJs);
     watch('./src/js/api/*.js', buildApiJs);
 }
 
-exports.default = series(clean, parallel(buildHtml, buildJson, buildIcon, buildLess, 
-    buildLibJs, buildCmdJs, buildCommonJs, buildContentJs, buildApiJs), taskWatch)
+exports.default = series(clean, parallel(buildHtml, buildJson, buildIcon, buildLocales, buildLess, 
+    buildBackgroundJs, buildLibJs, buildCmdJs, buildCommonJs, buildContentJs, buildApiJs), taskWatch)

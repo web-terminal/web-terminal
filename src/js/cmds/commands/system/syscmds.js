@@ -178,7 +178,23 @@ var curlCmd = function() {
             // data
             if (command.options.hasOwnProperty('data')) {
                 ajaxConfig['type'] = 'POST';
-                ajaxConfig['data'] = command.options['data'];
+
+                if (typeof command.options.data == 'object') {
+                    let data = {};
+                    for (let i in command.options.data) {
+                        let element = command.options.data[i];
+                        let keyval = element.indexOf(':') > -1 ? element.split(':') : element.split('=');
+                        console.log(keyval)
+                        if (keyval.length > 1) {
+                            data[$.trim(keyval[0])] = $.trim(keyval[1]);
+                        } else {
+                            data[i] = element;
+                        }
+                    }
+                    ajaxConfig['data'] = data;
+                } else {
+                    ajaxConfig['data'] = command.options.data;
+                }
             }
             // header
             if (command.options.hasOwnProperty('header')) {
@@ -187,7 +203,7 @@ var curlCmd = function() {
                     command.options.header = [command.options.header];
                 }
                 command.options.header.forEach(element => {
-                    let keyval = element.split(':')
+                    let keyval = element.indexOf(':') > -1 ? element.split(':') : element.split('=');
                     header[$.trim(keyval[0])] = keyval.length > 1 ? $.trim(keyval[1]) : true;
                     // console.log(keyval, header)
                 });
@@ -316,7 +332,7 @@ var jsCmd = function() {
     this.options = {
         current: {
             simple: ["c"],
-            desc: "Useage: <code>js alert('hello web terminal.') -c</code> Or <code>js `alert('hello web terminal.')`</code> to exec js code at the current page."
+            desc: "Useage: <code>js `alert('hello web terminal.')` -c</code> Or <code>js `alert('hello web terminal.')`</code> to exec js code at the current page."
         },
         url: {
             simple: "u",
@@ -352,7 +368,6 @@ var jsCmd = function() {
                     type: 'webRequest', 
                     config: ajaxConfig,
                     callback: function(res) {
-                        console.log(res.data.xhr.responseText)
                         execjs([res.data.xhr.responseText]);
                     }
                 });

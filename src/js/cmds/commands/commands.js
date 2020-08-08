@@ -17,24 +17,32 @@ Command.prototype.PrompParser = function(prompt) {
     }
 }
 
-Command.prototype.Exec = function(cmdwin) {
+Command.prototype.Exec = function(terminal) {
+    var self = this;
     var shown_input = this.input;
-    if (cmdwin.input.attr('type') === 'password') {
+    if (terminal.input.attr('type') === 'password') {
         shown_input = new Array(shown_input.length + 1).join("•");
     }
-    cmdwin.displayInput(shown_input);
-    
-    if (cmdwin.all_commands.hasOwnProperty(this.name)) {
-        // console.log("this is system commands.", this.name+"Cmd");
-        cmdInstance = (new cmdwin.all_commands[this.name]());
+    terminal.displayInput(shown_input);
+
+    var exec = function() {
+        let cmdInstance = null;
+        if (typeof terminal.all_commands[self.name] == 'function') {
+            cmdInstance = (new terminal.all_commands[self.name]());
+        } else {
+            cmdInstance = eval('new '+terminal.all_commands[self.name]+'()');
+        }
         // change simple options to normal options
-        this.TransferSimpleOptions(cmdInstance);
-        console.log(this.options, this.content)
+        self.TransferSimpleOptions(cmdInstance);
         // exec this cmd
-        cmdInstance.Exec(this, cmdwin)
-        cmdwin.showInputType();
+        cmdInstance.Exec(self, terminal);
+        terminal.showInputType();
+    }
+    
+    if (terminal.all_commands.hasOwnProperty(this.name)) {
+        exec();
     } else {
-        cmdwin.displayOutput(cmdwin.options.unknown_cmd);
+        terminal.displayOutput(terminal.options.unknown_cmd);
     }
     return false;
 }

@@ -6,7 +6,7 @@ function messageHandle(msg, sender, callback) {
             for (let i in msg.content) {
                 // trim
                 let code = msg.content[i].replace(/(^\s*)|(\s*$)/g, "");
-                console.log(code);
+                // console.log(code);
                 result = eval(code);
             }
         } else if (msg.type === 'selector') {

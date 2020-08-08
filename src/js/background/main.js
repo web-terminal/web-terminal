@@ -12,14 +12,21 @@ function response_chan_get() {
 
 // 监听注入页面事件
 api_runtime_on_message_listener(function(message, sender, callback) {
+    // console.log(sender)
     switch (message.type) {
     case "js":
     case "selector":
         let sendMessage = function(tab) {
             // console.log("send tab id=", tab.id);
             if (message.type == 'js') {
+                if (tab.url.startsWith('chrome-extension://'+sender.id)) {
+                    let callbackMessage = message;
+                    callbackMessage['response'] = "you can only exec js command at the normal url page, can not exec js at the extension pages.";
+                    api_send_callback_message(sender, message, callbackMessage);
+                    return false;
+                }
                 let content = message.content.join('')
-                chrome.tabs.executeScript(tab.id, {code: content}, function(result) {
+                api_execute_script(tab.id, {code: content}, function(result) {
                     for (let i in result) {
                         let callbackMessage = message;
                         callbackMessage['response'] = JSON.stringify(result[i]);
@@ -51,6 +58,8 @@ api_runtime_on_message_listener(function(message, sender, callback) {
                             waitTabComplete(tab, 300, sendMessage);
                         });
                     } else {
+                        // active tab
+                        api_tab_update(tab.id, {active: true})
                         sendMessage(tab);
                     }
                 });
@@ -115,6 +124,9 @@ api_runtime_on_message_listener(function(message, sender, callback) {
         }
         api_send_callback_message(sender, message, returnMessage);
     break;
+    case "cmdhub":
+        message_cmdhub(message, sender, callback);
+    break;
     }
 });
 
@@ -139,7 +151,12 @@ api_runtime_on_message_listener(function(message, sender, callback) {
 //     }
 // });
 
-// 监听键盘事件
+// listener 
+api_tab_onupdated(function(tabId, changeInfo, tab) {
+    cmdhub_listen_tab_loading_event(tabId, changeInfo, tab);
+});
+
+// listener key code event
 chrome.commands.onCommand.addListener(function(command) {
     // console.log('Command:', command);
     if (command == "toggle-cmdwin") {
