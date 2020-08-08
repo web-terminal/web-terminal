@@ -2,14 +2,7 @@ function messageHandle(msg, sender, callback) {
     let result = "";
     try {
         // First, validate the message's structure.
-        if (msg.type == 'js') {
-            for (let i in msg.content) {
-                // trim
-                let code = msg.content[i].replace(/(^\s*)|(\s*$)/g, "");
-                // console.log(code);
-                result = eval(code);
-            }
-        } else if (msg.type === 'selector') {
+        if (msg.type == 'selector') {
             let selectorId = msg.options.hasOwnProperty('selector') ? msg.options['selector'] : msg.content[0];
             let selector = $(selectorId);
             // fill or get content

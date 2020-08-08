@@ -111,7 +111,6 @@ api_runtime_on_message_listener(function(message, sender, callback) {
         });
     break;
     case "cron-job":
-        // console.log(message)
         let returnMessage = {data: 'ok'};
         if (message.options.type == 'list') {
             returnMessage.data = cronJobMaps;

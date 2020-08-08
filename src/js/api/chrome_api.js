@@ -54,7 +54,11 @@ function api_storage_sync_get(data, callback) {
 }
 
 function api_storage_sync_remove(data, callback) {
-    chrome.storage.sync.get(data, callback)
+    chrome.storage.sync.remove(data, callback)
+}
+
+function api_storage_local_remove(data, callback) {
+    chrome.storage.local.remove(data, callback)
 }
 
 function api_storage_local_set(data, callback) {
@@ -114,7 +118,6 @@ function api_notifications_create(options, callback) {
 }
 
 function api_execute_script(tabId, details, callback) {
-    console.log(tabId, details);
     chrome.tabs.executeScript(tabId, details, callback);
 }
 

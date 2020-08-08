@@ -483,7 +483,7 @@ var cronCmd = function() {
                     if (JSON.stringify(cronJobs) == '{}') {
                         cmdwin.displayOutput("You haven't added cron tasks.")
                     } else {
-                        let showStr = '<table width="100%"><tr><th>id</th><th>rule</th><th>cmds</th><th>enabled</th><th>showType</th><th>openType</th><th>times</th></tr>';
+                        let showStr = '<table width="100%"><tr><th>id</th><th>rule</th><th>cmds</th><th>enabled</th><th>showType</th><th>openType</th></tr>';
                         for (let id in cronJobs) {
                             showStr += '<tr title="'+cronJobs[id]['url']+'"><td>'+id+'</td>';
                             showStr += '<td>'+cronJobs[id]['rule']+'</td>';
@@ -491,7 +491,8 @@ var cronCmd = function() {
                             showStr += '<td>'+cronJobs[id]['enabled']+'</td>';
                             showStr += '<td>'+cronJobs[id]['showType']+'</td>';
                             showStr += '<td>'+cronJobs[id]['openType']+'</td>';
-                            showStr += '<td>'+cronJobs[id]['times']+'</td></tr>';
+                            // showStr += '<td>'+cronJobs[id]['times']+'</td>';
+                            showStr += '</tr>';
                         }
                         showStr += '</table>'
                         cmdwin.displayOutput(showStr);

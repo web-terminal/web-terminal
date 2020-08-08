@@ -31,14 +31,21 @@ function message_cmdhub(message, sender, callback) {
                 api_send_callback_message(sender, message, {meta: meta});
             });
         break;
+        case 'delete':
+            newCmd = message.newCmd;
+            delete CmdHub[newCmd];
+            api_storage_sync_set({'cmd:hub': CmdHub});
+            meta.data = CmdHub;
+            api_send_callback_message(sender, message, {meta: meta});
+        break;
     }
 }
 
-function cmdhub_get_cmd_code(cmd, successCallback, errorCallback) {
+function cmdhub_get_cmd_code(newCmd, successCallback, errorCallback) {
     let cmdhub_prefix = 'https://api.github.com/repos/web-terminal/cmdhub/contents/';
     let meta = {code: 200, msg: "", data: []};
     $.ajax({
-        url: cmdhub_prefix+cmd+'/cmd.json',
+        url: cmdhub_prefix+newCmd+'/cmd.json',
         type: 'GET',
         async: true,
         dataType: 'json',
@@ -96,7 +103,9 @@ function cmdhub_get_cmd_code(cmd, successCallback, errorCallback) {
 function cmdhub_update_all_tabs_cmd(cmd) {
     api_tab_query({}, function(tabs) {
         for (let i in tabs) {
-            cmdhub_inject_cmd(cmd, tabs[i].id);
+            if (tabs[i].url.startsWith('http')) {
+                cmdhub_inject_cmd(cmd, tabs[i].id);
+            }
         }
     });
 }
@@ -132,7 +141,7 @@ function cmdhub_init(tabId) {
 }
 
 function cmdhub_listen_tab_loading_event(tabId, changeInfo, tab) {
-    if (changeInfo.hasOwnProperty('status') && changeInfo.status == 'loading') {
+    if (changeInfo.hasOwnProperty('status') && changeInfo.status == 'loading' && tab.url.startsWith('http')) {
         cmdhub_init(tabId)
     }
 }
