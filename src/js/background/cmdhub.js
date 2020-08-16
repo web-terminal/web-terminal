@@ -42,7 +42,8 @@ function message_cmdhub(message, sender, callback) {
 }
 
 function cmdhub_get_cmd_code(newCmd, successCallback, errorCallback) {
-    let cmdhub_prefix = 'https://api.github.com/repos/web-terminal/cmdhub/contents/';
+    let cmdhub_prefix = 'https://raw.githubusercontent.com/web-terminal/cmdhub/master/';
+    let cmdhub_source_prefix = 'https://github.com/web-terminal/cmdhub/blob/master/';
     let meta = {code: 200, msg: "", data: []};
     $.ajax({
         url: cmdhub_prefix+newCmd+'/cmd.json',
@@ -50,7 +51,6 @@ function cmdhub_get_cmd_code(newCmd, successCallback, errorCallback) {
         async: true,
         dataType: 'json',
         success: function(jsonData) {
-            jsonData = jsonData.hasOwnProperty('content') ? JSON.parse(atob(jsonData.content)) : {};
             if (jsonData.hasOwnProperty('version')) {
                 let mainFile = jsonData.hasOwnProperty('main') ? jsonData.main : 'main.js';
                 // get main file
@@ -58,31 +58,24 @@ function cmdhub_get_cmd_code(newCmd, successCallback, errorCallback) {
                     url: cmdhub_prefix+newCmd+'/'+mainFile,
                     type: 'GET',
                     async: true,
-                    dataType: 'json',
-                    success: function(fileJson) {
-                        
+                    dataType: 'text',
+                    success: function(jsFile) {
                         let cmdset = {}
-                        if (fileJson.hasOwnProperty('content')) {
-                            cmdset['cmd:code:'+newCmd] = atob(fileJson.content);
-                            CmdHub[newCmd] = {
-                                version: jsonData.version,
-                                site: jsonData.hasOwnProperty('site') ? jsonData.site : '',
-                                index_func: jsonData.index_func ,
-                            }
-
-                            api_storage_sync_set({'cmd:hub': CmdHub});
-                            api_storage_local_set(cmdset);
-                            meta.data = CmdHub;
-                            successCallback && successCallback(meta, jsonData, cmdset['cmd:code:'+newCmd]);
-                        } else {
-                            meta.code = 501;
-                            meta.msg = fileJson.message;
-                            errorCallback && errorCallback(meta, jsonData);
+                        cmdset['cmd:code:'+newCmd] = jsFile;
+                        CmdHub[newCmd] = {
+                            version: jsonData.version,
+                            site: jsonData.hasOwnProperty('site') ? jsonData.site : '',
+                            index_func: jsonData.index_func ,
                         }
+
+                        api_storage_sync_set({'cmd:hub': CmdHub});
+                        api_storage_local_set(cmdset);
+                        meta.data = CmdHub;
+                        successCallback && successCallback(meta, jsonData, cmdset['cmd:code:'+newCmd]);
                     },
                     error: function(xhr) {
                         meta.code = 500;
-                        meta.msg = 'Get code error. please check you have visit url '+cmdhub_prefix+newCmd+'/'+mainFile;
+                        meta.msg = 'Get code error. please check you have visit url <a href="'+cmdhub_source_prefix+newCmd+'/'+mainFile+'">'+cmdhub_source_prefix+newCmd+'/'+mainFile+'</a>';
                         errorCallback && errorCallback(meta, jsonData);
                     }
                 });
@@ -94,7 +87,7 @@ function cmdhub_get_cmd_code(newCmd, successCallback, errorCallback) {
         },
         error: function(xhr) {
             meta.code = 500;
-            meta.msg = 'Please check if the command you want to add is in <a target="_blank" href="https://github.com/web-terminal/cmdhub">cmdhub</a>.';
+            meta.msg = 'Please verify that this command is in the <a target="_blank" href="https://github.com/web-terminal/cmdhub">cmdhub</a> repository.';
             errorCallback && errorCallback(meta, null);
         }
     });

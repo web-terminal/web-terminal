@@ -75,32 +75,51 @@ function messageHandle(msg, sender, callback) {
             toggleCmdWin();
         } else if (msg.type == "messageCallback") {
             api_message_callback(msg);
-        } else if (msg.type == 'cron-job') {
+        } else if (msg.type == 'remote-command-run') {
             let item = msg.item;
             if (!window.shadowRoot) {
                 toggleCmdWin();
             }
-            if (item.showType == 'background') {
-                toggleCmdWin();
-            }
+
+            toggleCmdWin(item.showType == 'background' ? 'hide' : 'show');
             if (item.cmds.length > 0) {
+                let data = [];
                 item.cmds.forEach(cmd => {
                     window.TerminalWin.autofill = window.TerminalWin.input.val();
-                    window.TerminalWin.handleInput(cmd);
+                    data.push(window.TerminalWin.handleInput(cmd, true));
                 });
+                result = data;
             }
+        } else if (msg.type == 'remote-tab-run') {
+            let item = msg.item;
+            if (!window.shadowRoot) {
+                toggleCmdWin();
+            }
+
+            toggleCmdWin(item.showType == 'background' ? 'hide' : 'show');
+            result = window.TerminalWin.tabComplete(item.input, true);
         }
     } catch (error) {
         result = "Error : "+error
         console.log(result);
     }
     
-    callback(result);
+    typeof callback == 'function' && callback(result);
 }
 
-function toggleCmdWin() {
+function toggleCmdWin(show) {
     if (window.shadowRoot) {
-        $(window.shadowRoot).find('#WebTerminalMainWin').toggle();
+        if (show == 'hide') {
+            $(window.shadowRoot).find('#WebTerminalMainWin').hide();
+            $(window.shadowRoot).find('.web-terminal-mask-layer').hide();
+        } else if (show == 'show') {
+            $(window.shadowRoot).find('#WebTerminalMainWin').show();
+            $(window.shadowRoot).find('.web-terminal-mask-layer').show();
+        } else {
+            $(window.shadowRoot).find('#WebTerminalMainWin').toggle();
+            $(window.shadowRoot).find('.web-terminal-mask-layer').toggle();
+        }
+        
         window.TerminalWin.focusOnInput();
     } else {
         (typeof showCmdWin != 'undefined') && showCmdWin();

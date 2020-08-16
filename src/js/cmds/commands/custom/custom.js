@@ -144,11 +144,11 @@ var browserCmd = function() {
     this.subCmds = {
         bookmark: {
             desc: "Browser bookmark useage: <code>browser bookmark</code> or <code>browser bookmark 'query'</code>",
-            exec: function(command, cmdwin) {
-                if (command.content.length > 1) {
+            Exec: function(command, cmdwin) {
+                if (command.content.length > 0) {
                     api_send_message({
                         type: "browser-bookmarks",
-                        options: {query: command.content[1], type: 'query'},
+                        options: {query: command.content[0], type: 'query'},
                         callback: function(msg) {
                             let results = msg.data;
                             let showStr = "<span class='green_highlight'>Search result:</span>";
@@ -176,10 +176,10 @@ var browserCmd = function() {
         },
         history: {
             desc: "Browser history useage: <code>browser history</code> or <code>browser history 'query'</code>",
-            exec: function(command, cmdwin) {
+            Exec: function(command, cmdwin) {
                 api_send_message({
                     type: "browser-history",
-                    options: {text: command.content.length > 1 ? command.content[1] : '', maxResults: 20},
+                    options: {text: command.content.length > 0 ? command.content[0] : '', maxResults: 20},
                     callback: function(msg) {
                         console.log("callback msg: ", msg)
                         let results = msg.data;
@@ -222,22 +222,11 @@ var browserCmd = function() {
                     desc: "Alternate notification content with a lower-weight font.",
                 }
             },
-            exec: function(command, cmdwin) {
+            Exec: function(command, cmdwin) {
                 // todo valid required params
                 api_send_message({type: "browser-notifications", options: command.options});
                 cmdwin.displayOutput("")
             }
-        }
-    }
-    this.Exec = function(command, cmdwin) {
-        if (command.content.length > 0) {
-            if (this.subCmds.hasOwnProperty(command.content[0])) {
-                this.subCmds[command.content[0]].exec(command, cmdwin);
-            } else {
-                cmdwin.displayErrorOutput("invalid command "+command.content[0]);
-            }
-        } else {
-            cmdwin.displayErrorOutput("please input sub command. like: browser bookmark <first content>");
         }
     }
 }

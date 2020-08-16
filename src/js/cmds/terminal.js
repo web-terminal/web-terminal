@@ -239,10 +239,11 @@ $.fn.extend({
     var TerminalWin = function (user_config) {
       this.keys_array    = [9, 13, 38, 40, 27],
       this.style         = 'dark',
-      this.output_init   = '<code><div>Welcome to <a href="https://github.com/web-terminal/web-terminal/wiki" target="_blank">Web-Terminal</a> v1.1.0</div><div>use <code>help</code> to show commands. <code>help js</code> to show js command instructions.</div></code>',
+      this.output_init   = '<code><div>Welcome to <a href="https://github.com/web-terminal/web-terminal/wiki" target="_blank">Web-Terminal</a> v1.1.1</div><div>use <code>help</code> to show commands. <code>help js</code> to show js command instructions.</div></code>',
       this.popup         = true,
       this.prompt_str    = '$ ',
       this.autofill      = '',
+      this.tab_nums      = 0,
       this.speech_synth_support = ('speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined'),
       this.options       = {
         busy_text:           'Communicating...',
@@ -259,7 +260,6 @@ $.fn.extend({
       this.customcmds = {};
       this.all_commands = syscmds;
       // this.syscmds = syscmds;
-      this.autocompletion_attempted = false;
   
       $.extend(this.options, user_config);
       
@@ -311,9 +311,18 @@ $.fn.extend({
   
       this.wrapper.keydown($.proxy(this.handleKeyDown, this));
       this.wrapper.keyup($.proxy(this.handleKeyUp, this));
-      this.wrapper.keydown($.proxy(this.handleKeyPress, this));
+      this.wrapper.keypress($.proxy(this.handleKeyPress, this));
+
+      let self = this;
       this.wrapper.find('.cmd-output').on('click', function(e) {
         e.stopPropagation();
+        let selectionTxt = window.getSelection().toString();
+        if (!selectionTxt) {
+          if (self.input.attr('disabled') == 'disabled') {
+            self.enableInput();
+          }
+          self.focusOnInput();
+        }
       })
     }
   
@@ -539,17 +548,42 @@ $.fn.extend({
     /**
      * Do something
      */
-    TerminalWin.prototype.handleInput = function(input_str) {
+    TerminalWin.prototype.handleInput = function(input_str, from_remote) {
       if (input_str) {
         var command = new Command(input_str, this.prompt_str);
-        command.Exec(this);
+        let result = command.Exec(this, from_remote);
+        this.formateOutput({type: 'cmd-out', data: result});
+        return result;
       } else {
         this.displayInput('');
         this.displayOutput('');
       }
 
-      
+      return null;
     }
+
+    TerminalWin.prototype.formateOutput = function(result) {
+      if (result.hasOwnProperty('type')) {
+          let data = result.hasOwnProperty('data') ? result.data : [];
+          console.log(data);
+          let output = ''
+          switch (result.type) {
+              case 'tab-complete':
+              case 'cmd-out':
+                if (data && typeof data == 'object') {
+                  for (let i in data) {
+                    let item = data[i];
+                    let img = item.hasOwnProperty('icon') ? '<img style="max-width:12px;max-height:12px;margin:-1px 10px;" src="'+item.icon+'"/>' : '';
+                    output += '<div><a href="'+item.url+'" target="_blank">'+img+item.title+'</a></div>';
+                  }
+                } else if (typeof data == 'string') {
+                  output = data;
+                }
+              break;
+          }
+          this.displayOutput(output);
+      }
+  }
   
     /**
      * Handle JSON responses. Used as callback by external command handler
@@ -584,13 +618,13 @@ $.fn.extend({
     /**
      * Handle keypresses
      */
-    TerminalWin.prototype.handleKeyPress = function(e) {
+    TerminalWin.prototype.handleKeyDown = function(e) {
       var keyCode = e.keyCode || e.which,
-      input_str = $.trim(this.input.val()),
-      autocompletions;
-      // if (keyCode != 91 && keyCode != 17) {
-        e.stopPropagation();
-      // }
+      input_str = this.input.val();
+      e.stopPropagation();
+      if ($.inArray(keyCode, this.keys_array) > -1) {
+        e.preventDefault();
+      }
 
       if (keyCode === 9) { //tab
         this.tabComplete(input_str);
@@ -598,10 +632,6 @@ $.fn.extend({
         this.displayInput(input_str+"^C");
         return false;
       } else {
-        this.autocompletion_attempted = false;
-        if (this.autocomplete_ajax) {
-          this.autocomplete_ajax.abort();
-        }
         if (keyCode === 13) { // enter
           this.autofill = '';
           if (input_str.charCodeAt(input_str.length-1) === 92) {
@@ -668,68 +698,33 @@ $.fn.extend({
     /**
      * Prevent default action of special keys
      */
-    TerminalWin.prototype.handleKeyDown = function(e) {
+    TerminalWin.prototype.handleKeyPress = function(e) {
       var key = e.keyCode || e.which;
-      // if (key != 91 && key != 17) {
-        e.stopPropagation();
+      e.stopPropagation();
+      // if ($.inArray(key, this.keys_array) > -1) {
+      //   e.preventDefault();
+      //   return false;
       // }
-      if ($.inArray(key, this.keys_array) > -1) {
-        e.preventDefault();
-        return false;
-      }
       return true;
     }
   
     /**
      * Complete command names when tab is pressed
      */
-    TerminalWin.prototype.tabComplete = function(str) {
-      // If we have a space then offload to external processor
-      if (str.indexOf(' ') !== -1) {
-        // if (this.options.tabcomplete_url) {
-        //   if (this.autocomplete_ajax) {
-        //     this.autocomplete_ajax.abort();
-        //   }
-  
-        //   this.autocomplete_ajax = $.ajax({
-        //     url: this.options.tabcomplete_url,
-        //     context: this,
-        //     dataType: 'json',
-        //     data: {
-        //       cmd_in: str
-        //     },
-        //     success: function (data) {
-        //       if (data) {
-        //         this.input.val(data);
-        //       }
-        //     }
-        //   });
-        // }
-        // this.autocompletion_attempted = false;
-        // return;
+    TerminalWin.prototype.tabComplete = function(input_str, from_remote) {
+      let self = this;
+      self.tab_nums++;
+      setTimeout(function() {
+        self.tab_nums = 0;
+      }, 300);
+
+      var command = new Command(input_str, this.prompt_str);
+      let result = command.TabComplete(this, from_remote);
+      if (!from_remote) {
+        self.formateOutput(result);
       }
-      var autocompletions = [];
-      for (let key in this.all_commands) {
-        if (key.startsWith(str)) {
-          autocompletions.push(key);
-        }
-      }
-  
-  
-      if (autocompletions.length === 0) {
-        return false;
-      } else if (autocompletions.length === 1) {
-        this.input.val(autocompletions[0]+" ");
-      } else {
-        if (this.autocompletion_attempted) {
-          this.displayOutput(autocompletions.join(', '));
-          this.autocompletion_attempted = false;
-          this.input.val(str);
-          return;
-        } else {
-          this.autocompletion_attempted = true;
-        }
-      }
+      
+      return result;
     }
   
   

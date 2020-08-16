@@ -17,7 +17,85 @@ Command.prototype.PrompParser = function(prompt) {
     }
 }
 
-Command.prototype.Exec = function(terminal) {
+Command.prototype.displayCommand = function(terminal, commands, cmd) {
+    var autocompletions = [];
+    for (let key in commands) {
+        if (key == cmd) {
+            terminal.input.val(terminal.input.val()+cmd+" ");
+            let cmdInstance = this.getCmdInstance(commands[key]);
+            if (cmdInstance && cmdInstance.hasOwnProperty('subCmds')) {
+                let subCmd = this.content.length > 0 ? this.content.shift() : '';
+                this.displayCommand(terminal, cmdInstance.subCmds, subCmd);
+            } else if (this.content.length > 0) {
+                terminal.input.val(terminal.input.val()+this.content.join(' '));
+            }
+            break;
+        } else if (key.startsWith(cmd)) {
+            autocompletions.push(key);
+        }
+    }
+    if (autocompletions.length == 1) {
+        terminal.input.val(terminal.input.val()+autocompletions[0]+" ");
+    } else if (autocompletions.length > 1) {
+        terminal.displayOutput(autocompletions.join(', '));
+        terminal.input.val(this.input);
+    }
+}
+
+Command.prototype.GetInputArgs = function() {
+    return {
+        input: this.input,
+        cmd: this.name,
+        options: this.options,
+        content: this.content,
+        prompt: this.prompt
+    }
+}
+
+Command.prototype.TabComplete = function(terminal, from_remote) {
+    if (terminal.tab_nums == 1) {
+        terminal.input.val('');
+        this.displayCommand(terminal, terminal.all_commands, this.name);
+    }
+    if (terminal.tab_nums == 2) {
+        let cmdInstance = this.getCmdInstance(terminal.all_commands[this.name]);
+        if (cmdInstance && typeof cmdInstance.TabComplete == 'function') {
+            // 判断命令是当前页面执行还是远端执行
+            if (!from_remote && cmdInstance.hasOwnProperty('config') && cmdInstance.config.hasOwnProperty('site')) {
+                api_send_message({
+                    type: 'exec-remote-tab',
+                    config: cmdInstance.config,
+                    item: {
+                        'showType': 'background',
+                        'input': self.input,
+                    }, 
+                    callback: function(result) {
+                        let data = result && result.hasOwnProperty('data') ? result.data : [];
+                        terminal.formateOutput({type: 'tab-complete', data: data});
+                    }
+                });
+            } else {
+                return cmdInstance.TabComplete(this.GetInputArgs());
+            }
+        }
+    }
+    return [];
+}
+
+Command.prototype.getCmdInstance = function(cmdDefine) {
+    let cmdInstance = null;
+    try {
+        if (typeof cmdDefine == 'function') {
+            cmdInstance = (new cmdDefine());
+        } else if (typeof cmdDefine == 'string' && cmdDefine.trim()) {
+            cmdInstance = eval('new '+cmdDefine+'()');
+        }
+    } catch (e) {}
+    
+    return cmdInstance;
+}
+
+Command.prototype.Exec = function(terminal, from_remote) {
     var self = this;
     var shown_input = this.input;
     if (terminal.input.attr('type') === 'password') {
@@ -25,26 +103,57 @@ Command.prototype.Exec = function(terminal) {
     }
     terminal.displayInput(shown_input);
 
-    var exec = function() {
-        let cmdInstance = null;
-        if (typeof terminal.all_commands[self.name] == 'function') {
-            cmdInstance = (new terminal.all_commands[self.name]());
-        } else {
-            cmdInstance = eval('new '+terminal.all_commands[self.name]+'()');
-        }
+    if (terminal.all_commands.hasOwnProperty(self.name)) {
+        let cmdInstance = self.getCmdInstance(terminal.all_commands[self.name]);
         // change simple options to normal options
         self.TransferSimpleOptions(cmdInstance);
-        // exec this cmd
-        cmdInstance.Exec(self, terminal);
-        terminal.showInputType();
-    }
-    
-    if (terminal.all_commands.hasOwnProperty(this.name)) {
-        exec();
+
+        var exec = function(instance) {
+            // exec this cmd
+            if (instance.hasOwnProperty('subCmds')) {
+                if (self.content.length > 0) {
+                    if (instance.subCmds.hasOwnProperty(self.content[0])) {
+                        let subCmd = self.content.shift();
+                        return exec(instance.subCmds[subCmd]);
+                    }
+                }
+            }
+            
+            if (typeof instance.Exec == 'function') {
+                let result = instance.Exec(self.GetInputArgs(), terminal);
+                terminal.showInputType();
+                return result;
+            } else {
+                terminal.displayOutput('Command without handle function.');
+            }
+            return null;
+        }
+
+        // 判断命令是当前页面执行还是远端执行
+        if (!from_remote && cmdInstance.hasOwnProperty('config') && cmdInstance.config.hasOwnProperty('site')) {
+            api_send_message({
+                type: 'exec-remote-command',
+                config: cmdInstance.config,
+                item: {
+                    'showType': 'background',
+                    'cmds': [self.input],
+                }, 
+                callback: function(result) {
+                    let cmd_datas = result && result.hasOwnProperty('data') ? result.data : [];
+                    for (let i in cmd_datas) {
+                        terminal.formateOutput({type: 'cmd-out', data: cmd_datas[i]});
+                    }
+                }
+            });
+        } else {
+            return exec(cmdInstance);
+        }
+
     } else {
         terminal.displayOutput(terminal.options.unknown_cmd);
     }
-    return false;
+
+    return null;
 }
 
 Command.prototype.InputParser = function(input_str) {

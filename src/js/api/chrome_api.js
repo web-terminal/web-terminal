@@ -82,7 +82,8 @@ function api_tab_onupdated(callback) {
 }
 
 function api_tab_create(url, callback) {
-    chrome.tabs.create({url: url}, callback);
+    let config = typeof url == 'object' ? url : {url: url};
+    chrome.tabs.create(config, callback);
 }
 
 function api_tab_get(tabId, callback) {

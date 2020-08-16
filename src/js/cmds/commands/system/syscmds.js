@@ -166,7 +166,7 @@ var curlCmd = function() {
     this.desc = "Usage: <code>curl http://api.xxx.com -u username:password -d `{\"field\": \"value\"}` -i </code> Or <code>curl http://api.xxx.com -u username:password -d k1=v1&k2=v2&k3=v3 -i</code>";
     this.defaultOption = "get";
     this.Exec = function(command, cmdwin) {
-        if (command.content.length < 0) {
+        if (command.content.length < 1) {
             cmdwin.displayOutput("no url input.");
         } else {
             let ajaxConfig = {
@@ -464,9 +464,9 @@ var cronCmd = function() {
             simple: "r",
             desc: "Useage: <code>cron 4f0wr4ynbs80 -r `01 * * * * *`</code> Update the rule of cron."
         },
-        cmds: {
+        command: {
             simple: "c",
-            desc: "Useage: <code>cron 4f0wr4ynbs80 -c `time -t`</code> Update the host page url address."
+            desc: "Useage: <code>cron 4f0wr4ynbs80 -c `time -t`</code> Update the executor command."
         },
     }
     this.desc = "Useage: <code>cron `*/3 * * * * *` \"js `console.log('hello WebTerminal!')`\" -a</code>";

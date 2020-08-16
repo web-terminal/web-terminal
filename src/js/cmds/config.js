@@ -11,7 +11,7 @@ var syscmds = {
     // "pwd": pwdCmd,
     "clear": clearCmd,
     // "invert": invertCmd,
-    // "talk": talkCmd,
+    // "talk": talkCmd,a
 // };
 
 // var customcmds = {
@@ -20,7 +20,7 @@ var syscmds = {
     "translate": translateCmd,
     "json": jsonCmd,
     "browser": browserCmd,
-    // "get": getCmd,
+    "qqdoc": qqdocCmd,
     // "bookmark": bookmarkCmd,
     // "test": testCmd,
 }
