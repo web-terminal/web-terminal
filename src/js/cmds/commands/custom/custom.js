@@ -18,14 +18,14 @@ var searchCmd = function()  {
     };
     this.desc = "Useage: <code>search text</code> use the google as the default search engine.";
     this.defaultOption = "google";
-    this.Exec = (command, cmdwin) => {
+    this.Exec = (command, terminal) => {
         var nums = 0;
         for (let option in command.options) {
             if (this.options.hasOwnProperty(option)) {
                 nums++;
                 setTimeout(() => {
                     console.log(command.content)
-                    cmdwin.goToURL(encodeURI(this.options[option]['url']+command.content.join("")));
+                    terminal.goToURL(encodeURI(this.options[option]['url']+command.content.join("")));
                 }, nums*300);
             }
         }
@@ -52,17 +52,17 @@ var translateCmd = function() {
     };
     this.desc = "Useage: <code>translate text</code> use the google as the default translate engine.";
     this.defaultOption = "google";
-    this.Exec = (command, cmdwin) => {
+    this.Exec = (command, terminal) => {
         var nums = 0;
         for (let option in command.options) {
             if (this.options.hasOwnProperty(option)) {
                 nums++;
                 setTimeout(() => {
-                    cmdwin.goToURL(encodeURI(this.options[option]['url']+command.content.join("")));
+                    terminal.goToURL(encodeURI(this.options[option]['url']+command.content.join("")));
                 }, nums*300);
             }
         }
-        cmdwin.displayOutput("");
+        terminal.displayOutput("");
     }
 }
 
@@ -107,7 +107,7 @@ var jsonCmd = function() {
     };
     this.desc = "Useage: <code>json `{\"web\":\"terminal\"}`</code> use the json-parser as the default json engine.";
     this.defaultOption = "json-parser";
-    this.Exec = (command, cmdwin) => {
+    this.Exec = (command, terminal) => {
         for (let option in command.options) {
             if (this.options.hasOwnProperty(option)) {
                 let configOption = this.options[option];
@@ -135,16 +135,44 @@ var jsonCmd = function() {
                 });
             }
         }
-        cmdwin.displayOutput("");
+        terminal.displayOutput("");
         
     }
 }
 
 var browserCmd = function() {
+    this.desc = "Browser related commands";
     this.subCmds = {
+        tabs: {
+            desc: "View the tabs opened by the browser.",
+            Exec: function(command, terminal) {
+                var query = {};
+                if (command.content.length > 0) {
+                    query.title = '*'+command.content[0]+'*';
+                }
+                api_send_message({
+                    type: "browser-tabs",
+                    options: {query: query, type: 'query'},
+                    callback: function(msg) {
+                        let results = msg.data;
+                        let showStr = "<style>div.tab{margin: 3px 0px;} div.tab a.active{color: green;} div.tab img{margin-top: -5px;vertical-align: middle;}</style>";
+                        results.forEach(tab => {
+                            showStr += "<div class='tab' data-type='tabs'>"+(terminal.is_extension_page ? "<img src='"+api_getIcon(tab.url)+"'>" : "")+" <a data-tab-id='"+tab.id+"' class='"+(tab.active ? 'active' : '')+"'>"+tab.title+"</a></div>";
+                        });
+                        terminal.displayOutput(showStr ? showStr : 'No result.');
+                        terminal.options.selector.find('.cmd-output [data-type="tabs"] a[data-tab-id]').off('click').on('click', function() {
+                            api_send_message({
+                                type: "browser-tabs",
+                                options: {tabId: $(this).data('tab-id'), type: 'update', updateProperties: {active: true}}
+                            })
+                        })
+                    }
+                });
+            }
+        },
         bookmark: {
-            desc: "Browser bookmark useage: <code>browser bookmark</code> or <code>browser bookmark 'query'</code>",
-            Exec: function(command, cmdwin) {
+            desc: "Browser bookmark <code>browser bookmark</code> or <code>browser bookmark 'query'</code>",
+            Exec: function(command, terminal) {
                 if (command.content.length > 0) {
                     api_send_message({
                         type: "browser-bookmarks",
@@ -155,7 +183,7 @@ var browserCmd = function() {
                             results.forEach(element => {
                                 showStr += "<div><a target='_blank' href='"+element.url+"'>"+element.title+"</a></div>";
                             });
-                            cmdwin.displayOutput(showStr ? showStr : 'No result.')
+                            terminal.displayOutput(showStr ? showStr : 'No result.')
                         }
                     });
                 } else {
@@ -168,15 +196,15 @@ var browserCmd = function() {
                             results.forEach(element => {
                                 showStr += "<div><a target='_blank' href='"+element.url+"'>"+element.title+"</a></div>";
                             });
-                            cmdwin.displayOutput(showStr ? showStr : 'No result.')
+                            terminal.displayOutput(showStr ? showStr : 'No result.')
                         }
                     });
                 }
             }
         },
         history: {
-            desc: "Browser history useage: <code>browser history</code> or <code>browser history 'query'</code>",
-            Exec: function(command, cmdwin) {
+            desc: "Browser history <code>browser history</code> or <code>browser history 'query'</code>",
+            Exec: function(command, terminal) {
                 api_send_message({
                     type: "browser-history",
                     options: {text: command.content.length > 0 ? command.content[0] : '', maxResults: 20},
@@ -187,13 +215,13 @@ var browserCmd = function() {
                         results.forEach(element => {
                             showStr += "<div><a target='_blank' href='"+element.url+"'>"+element.title+"</a></div>";
                         });
-                        cmdwin.displayOutput(showStr ? showStr : 'No result.')
+                        terminal.displayOutput(showStr ? showStr : 'No result.')
                     }
                 });
             }
         },
         notice: {
-            desc: "Browser notice useage: <code>browser notice -t basic -i https://developer.chrome.com/webstore/images/reader.png -T `It's test title` -m `main message` -M `content message`</code>",
+            desc: "Browser notice <code>browser notice -t basic -i https://developer.chrome.com/webstore/images/reader.png -T `It's test title` -m `main message` -M `content message`</code>",
             options: {
                 type: {
                     simple: "t",
@@ -222,10 +250,10 @@ var browserCmd = function() {
                     desc: "Alternate notification content with a lower-weight font.",
                 }
             },
-            Exec: function(command, cmdwin) {
+            Exec: function(command, terminal) {
                 // todo valid required params
                 api_send_message({type: "browser-notifications", options: command.options});
-                cmdwin.displayOutput("")
+                terminal.displayOutput("")
             }
         }
     }

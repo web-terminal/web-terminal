@@ -183,7 +183,7 @@ $.fn.extend({
      * @return {Integer} Size of stack
      */
     function getSize(){
-      return arr.size;
+      return arr.length;
     }
   
     return {
@@ -239,7 +239,7 @@ $.fn.extend({
     var TerminalWin = function (user_config) {
       this.keys_array    = [9, 13, 38, 40, 27],
       this.style         = 'dark',
-      this.output_init   = '<code><div>Welcome to <a href="https://github.com/web-terminal/web-terminal/wiki" target="_blank">Web-Terminal</a> v1.1.1</div><div>use <code>help</code> to show commands. <code>help js</code> to show js command instructions.</div></code>',
+      this.output_init   = '<code><div>Welcome to <a href="https://github.com/web-terminal/web-terminal/wiki" target="_blank">Web-Terminal</a> v1.2.2</div><div>Use <code>help</code> to show commands. <code>help js</code> to show js command instructions.</div></code>',
       this.popup         = true,
       this.prompt_str    = '$ ',
       this.autofill      = '',
@@ -253,13 +253,13 @@ $.fn.extend({
         history_id:          'cmd_history',
         selector:            '#cmd',
         talk:                false,
-        unknown_cmd:         'Unrecognised command',
         typewriter_time:     32
       },
       this.voices = false;
+      this.is_extension_page = location.href.startsWith('chrome-extension://') ? true : false;
       this.customcmds = {};
+      this.syscmds = Object.keys(syscmds);
       this.all_commands = syscmds;
-      // this.syscmds = syscmds;
   
       $.extend(this.options, user_config);
       
@@ -434,6 +434,18 @@ $.fn.extend({
       this.prompt_str = new_prompt;
       this.prompt_elem.html(this.prompt_str);
     }
+
+    TerminalWin.prototype.validator = function(command_name) {
+      if (this.all_commands.hasOwnProperty(command_name)) {
+        if (location.href.startsWith('chrome-extension://')) {
+          if (typeof this.all_commands[command_name] == 'string' || command_name == 'js') {
+            throw "You can only exec this command at the normal url page, can not exec js at the extension pages.";
+          }
+        }
+      } else {
+        throw "Unrecognised command "+command_name+".";
+      }
+    }
   
     /**
      * Post-file-drop dropzone reset
@@ -544,45 +556,75 @@ $.fn.extend({
   
   
     // ====== Handlers ==============================
-  
+
     /**
      * Do something
      */
-    TerminalWin.prototype.handleInput = function(input_str, from_remote) {
+    TerminalWin.prototype.handleInput = function(input_str, from_remote, callback) {
       if (input_str) {
-        var command = new Command(input_str, this.prompt_str);
-        let result = command.Exec(this, from_remote);
-        this.formateOutput({type: 'cmd-out', data: result});
-        return result;
+        var self = this;
+        try {
+          var command = new Command(input_str, this.prompt_str);
+          command.Exec(this, from_remote, function(result) {
+            self.displayOutput(self.formateOutput(result, from_remote));
+            if (typeof callback == 'function') callback(result);
+          });
+        } catch (err) {
+          this.displayOutput(err);
+        }
       } else {
         this.displayInput('');
         this.displayOutput('');
       }
-
-      return null;
     }
 
-    TerminalWin.prototype.formateOutput = function(result) {
-      if (result.hasOwnProperty('type')) {
-          let data = result.hasOwnProperty('data') ? result.data : [];
-          console.log(data);
-          let output = ''
-          switch (result.type) {
-              case 'tab-complete':
-              case 'cmd-out':
-                if (data && typeof data == 'object') {
-                  for (let i in data) {
-                    let item = data[i];
-                    let img = item.hasOwnProperty('icon') ? '<img style="max-width:12px;max-height:12px;margin:-1px 10px;" src="'+item.icon+'"/>' : '';
+    TerminalWin.prototype.formateOutput = function(result, from_remote) {
+      var self = this;
+      let output = ''
+      if (result && result.hasOwnProperty('type')) {
+        let data = result.hasOwnProperty('data') ? result.data : [];
+        switch (result.type) {
+            case 'data-list':
+              if (data && typeof data == 'object') {
+                for (let i in data) {
+                  let item = data[i];
+                  let img = '';
+                  if (item.hasOwnProperty('icon')) {
+                    if (item.hasOwnProperty('icon_type') == 'svg') {
+                      img = item.icon;
+                    } else {
+                      img = '<img style="max-width:12px;max-height:12px;margin:-1px 10px;" src="'+item.icon+'"/>';
+                    }
+                  }
+                  if (!item.hasOwnProperty('url')) {
+                    output += '<div><label>'+img+item.title+'</label></div>';
+                  } else {
                     output += '<div><a href="'+item.url+'" target="_blank">'+img+item.title+'</a></div>';
                   }
-                } else if (typeof data == 'string') {
-                  output = data;
                 }
+              }
               break;
-          }
-          this.displayOutput(output);
+            case 'html-text':  
+              output = result.data;
+              break;
+            case 'command-list':
+              if (!from_remote && data && typeof data == 'object' && data.length > 0) {
+                var serialExec = function(i) {
+                  if (i < data.length) {
+                    self.handleInput(data[i], from_remote, function() {
+                      setTimeout(function() {
+                        serialExec(++i);
+                      }, 1000);
+                    });
+                  }
+                }
+                var i = 0;
+                serialExec(i);
+              }
+              return output;
+        }
       }
+      return output
   }
   
     /**
@@ -650,10 +692,8 @@ $.fn.extend({
               } else {
                 this.handleInput("search "+input_str);
               }
-              
             } else {
               this.disableInput();
-    
               // push command to stack if using text input, i.e. no passwords
               if (this.input.get(0).type !== 'password' && input_str) {
                 this.cmd_stack.push(input_str);
@@ -664,7 +704,7 @@ $.fn.extend({
           }
           
         } else if (keyCode === 38) { // up arrow
-          if (input_str !== "" && this.cmd_stack.cur === (this.cmd_stack.getSize() - 1)) {
+          if (input_str !== "" && this.cmd_stack.getCur() === this.cmd_stack.getSize()) {
             this.cmd_stack.push(input_str);
           }
   
@@ -719,12 +759,20 @@ $.fn.extend({
       }, 300);
 
       var command = new Command(input_str, this.prompt_str);
-      let result = command.TabComplete(this, from_remote);
-      if (!from_remote) {
-        self.formateOutput(result);
+      var message = {};
+
+      if (self.tab_nums == 1) {
+        command.TabCompleteSystem(self);
+      } else if (self.tab_nums == 2) {
+        message = command.TabComplete(self, from_remote);
+        if (!from_remote) {
+          self.displayOutput(self.formateOutput(message, from_remote));
+        }
+        self.input.val(input_str);
       }
+
       
-      return result;
+      return message;
     }
   
   
@@ -768,7 +816,7 @@ $.fn.extend({
      * Make prompt and input fit on one line
      */
     TerminalWin.prototype.resizeInput = function() {
-      var cmd_width = this.wrapper.width() - this.wrapper.find('.main-prompt').first().width() - 25;
+      var cmd_width = this.wrapper.width() - this.wrapper.find('.main-prompt').first().width() - 25 - 10;
       this.input.css('width', cmd_width);
       this.focusOnInput();
     }

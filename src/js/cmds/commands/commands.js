@@ -52,31 +52,34 @@ Command.prototype.GetInputArgs = function() {
     }
 }
 
+Command.prototype.TabCompleteSystem = function(terminal) {
+    terminal.input.val('');
+    this.displayCommand(terminal, terminal.all_commands, this.name);
+}
+
 Command.prototype.TabComplete = function(terminal, from_remote) {
-    if (terminal.tab_nums == 1) {
-        terminal.input.val('');
-        this.displayCommand(terminal, terminal.all_commands, this.name);
-    }
-    if (terminal.tab_nums == 2) {
-        let cmdInstance = this.getCmdInstance(terminal.all_commands[this.name]);
-        if (cmdInstance && typeof cmdInstance.TabComplete == 'function') {
-            // 判断命令是当前页面执行还是远端执行
-            if (!from_remote && cmdInstance.hasOwnProperty('config') && cmdInstance.config.hasOwnProperty('site')) {
-                api_send_message({
-                    type: 'exec-remote-tab',
-                    config: cmdInstance.config,
-                    item: {
-                        'showType': 'background',
-                        'input': self.input,
-                    }, 
-                    callback: function(result) {
-                        let data = result && result.hasOwnProperty('data') ? result.data : [];
-                        terminal.formateOutput({type: 'tab-complete', data: data});
-                    }
-                });
-            } else {
-                return cmdInstance.TabComplete(this.GetInputArgs());
-            }
+    var self = this;
+    var cmdInstance = this.getCmdInstance(terminal.all_commands[this.name]);
+    if (cmdInstance && typeof cmdInstance.TabComplete == 'function') {
+        // 判断命令是当前页面执行还是远端执行
+        if (!from_remote && cmdInstance.hasOwnProperty('config') && cmdInstance.config.hasOwnProperty('site')) {
+            api_send_message({
+                type: 'exec-remote-tab',
+                config: cmdInstance.config,
+                item: {
+                    'showType': 'background',
+                    'input': self.input,
+                }, 
+                callback: function(result) {
+                    var message = result && result.hasOwnProperty('data') ? result.data : [];
+                    terminal.displayOutput(terminal.formateOutput(message, from_remote));
+                    terminal.input.val(self.input);
+                }
+            });
+        } else {
+            var result =  cmdInstance.TabComplete(this.GetInputArgs());
+            terminal.input.val(self.input);
+            return result;
         }
     }
     return [];
@@ -89,36 +92,41 @@ Command.prototype.getCmdInstance = function(cmdDefine) {
             cmdInstance = (new cmdDefine());
         } else if (typeof cmdDefine == 'string' && cmdDefine.trim()) {
             cmdInstance = eval('new '+cmdDefine+'()');
+        } else {
+            cmdInstance = cmdDefine;
         }
     } catch (e) {}
     
     return cmdInstance;
 }
 
-Command.prototype.Exec = function(terminal, from_remote) {
+Command.prototype.Exec = function(terminal, from_remote, callback) {
     var self = this;
     var shown_input = this.input;
     if (terminal.input.attr('type') === 'password') {
         shown_input = new Array(shown_input.length + 1).join("•");
     }
+    
     terminal.displayInput(shown_input);
+    terminal.validator(self.name);
 
-    if (terminal.all_commands.hasOwnProperty(self.name)) {
-        let cmdInstance = self.getCmdInstance(terminal.all_commands[self.name]);
-        // change simple options to normal options
-        self.TransferSimpleOptions(cmdInstance);
-
-        var exec = function(instance) {
-            // exec this cmd
-            if (instance.hasOwnProperty('subCmds')) {
-                if (self.content.length > 0) {
-                    if (instance.subCmds.hasOwnProperty(self.content[0])) {
-                        let subCmd = self.content.shift();
-                        return exec(instance.subCmds[subCmd]);
-                    }
+    let cmdInstance = self.getCmdInstance(terminal.all_commands[self.name]);
+    // change simple options to normal options
+    this.options = self.TransferSimpleOptions(cmdInstance);
+    var exec = function(instance, exec_type) {
+        // exec this cmd
+        if (instance.hasOwnProperty('subCmds')) {
+            if (self.content.length > 0) {
+                if (instance.subCmds.hasOwnProperty(self.content[0])) {
+                    let subCmd = self.content.shift();
+                    return exec(instance.subCmds[subCmd], exec_type);
                 }
             }
-            
+        }
+        if (self.options.hasOwnProperty('help')) {
+            var help = new helpCmd();
+            throw help.printCmdDetail('', instance);
+        } else if (exec_type == 'Exec') {
             if (typeof instance.Exec == 'function') {
                 let result = instance.Exec(self.GetInputArgs(), terminal);
                 terminal.showInputType();
@@ -127,33 +135,40 @@ Command.prototype.Exec = function(terminal, from_remote) {
                 terminal.displayOutput('Command without handle function.');
             }
             return null;
+        } else if (exec_type == 'config') {
+            return instance.hasOwnProperty('config') ? instance.config : {};
         }
-
-        // 判断命令是当前页面执行还是远端执行
-        if (!from_remote && cmdInstance.hasOwnProperty('config') && cmdInstance.config.hasOwnProperty('site')) {
-            api_send_message({
-                type: 'exec-remote-command',
-                config: cmdInstance.config,
-                item: {
-                    'showType': 'background',
-                    'cmds': [self.input],
-                }, 
-                callback: function(result) {
-                    let cmd_datas = result && result.hasOwnProperty('data') ? result.data : [];
-                    for (let i in cmd_datas) {
-                        terminal.formateOutput({type: 'cmd-out', data: cmd_datas[i]});
-                    }
-                }
-            });
-        } else {
-            return exec(cmdInstance);
-        }
-
-    } else {
-        terminal.displayOutput(terminal.options.unknown_cmd);
+        return null;
     }
 
-    return null;
+    // 判断命令是当前页面执行还是远端执行
+    if (!from_remote && cmdInstance.hasOwnProperty('site') && location.href.indexOf(cmdInstance.site) == -1) {
+        var config = exec(cmdInstance, 'config');
+        config = $.extend(cmdInstance.config, config);
+        api_send_message({
+            type: 'exec-remote-command',
+            site: cmdInstance.site,
+            config: config,
+            item: {
+                'showType': 'background',
+                'cmds': [self.input],
+            }, 
+            callback: function(result) {
+                let cmd_datas = result && result.hasOwnProperty('data') ? result.data : [];
+                if (cmd_datas.length > 0) {
+                    for (let i in cmd_datas) {
+                        if (typeof callback == 'function') callback(cmd_datas[i]);
+                    }
+                } else {
+                    if (typeof callback == 'function') callback([]);
+                }
+            }
+        });
+    } else {
+        var res = exec(cmdInstance, 'Exec');
+        if (typeof callback == 'function') callback(res);
+    }
+
 }
 
 Command.prototype.InputParser = function(input_str) {
@@ -210,36 +225,34 @@ Command.prototype.InputParser = function(input_str) {
     }
 }
 
-Command.prototype.TransferSimpleOptions = function(cmdInstance) {
+Command.prototype.TransferSimpleOptions = function(cmdInstance, index) {
+    index = typeof index == 'number' ? index : 0;
     var newOptions = {};
-    for (let inputOption in this.options) {
-        let subcmd = this.content.length > 0 ? this.content[0] : '';
-        if (cmdInstance.hasOwnProperty('subCmds') && cmdInstance.subCmds.hasOwnProperty(subcmd)) {
-            let subCmdConfig = cmdInstance.subCmds[subcmd];
-            if (subCmdConfig.hasOwnProperty('options')) {
-                for (let configOption in subCmdConfig.options) {
-                    if (subCmdConfig.options[configOption].hasOwnProperty('simple') && 
-                        subCmdConfig.options[configOption].simple == inputOption) {
+    if (this.content.length > index && cmdInstance.hasOwnProperty('subCmds') && cmdInstance.subCmds.hasOwnProperty(this.content[index])) {
+        newOptions = this.TransferSimpleOptions(cmdInstance.subCmds[this.content[index]], ++index);
+    } else {
+        for (let inputOption in this.options) {
+            var find = false;
+            if (cmdInstance.hasOwnProperty('options')) {
+                for (let configOption in cmdInstance.options) {
+                    if (cmdInstance.options[configOption].hasOwnProperty('simple') && 
+                        cmdInstance.options[configOption].simple == inputOption) {
                         newOptions[configOption] = this.options[inputOption];
+                        find = true;
+                        break;
                     }
                 }
             }
-        } else if (cmdInstance.hasOwnProperty('options') && !cmdInstance.options.hasOwnProperty(inputOption)) {
-            for (let configOption in cmdInstance.options) {
-                if (cmdInstance.options[configOption].hasOwnProperty('simple') && 
-                    cmdInstance.options[configOption].simple == inputOption) {
-                    newOptions[configOption] = this.options[inputOption];
-                }
+            if (!find) {
+                newOptions[inputOption] = this.options[inputOption];
             }
-        } else {
-            newOptions[inputOption] = this.options[inputOption];
+        }
+        // if empty options and then use default option
+        if (JSON.stringify(newOptions) === '{}' && cmdInstance.hasOwnProperty("defaultOption")) {
+            newOptions[cmdInstance.defaultOption] = true;
         }
     }
-    // if empty options and then use default option
-    if (JSON.stringify(newOptions) === '{}' && cmdInstance.hasOwnProperty("defaultOption")) {
-        newOptions[cmdInstance.defaultOption] = true;
-    }
 
-    this.options = newOptions;
+    return newOptions;
 }
 

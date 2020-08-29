@@ -2,17 +2,11 @@ function getUID(length) {
     if (!length) length = 5;
     return Number(Math.random().toString().substr(3, length) + Date.now()).toString(36);
 }
+
 // 获取本地化语言
 function api_locales(message) {
-    return chrome.i18n.getMessage(message)
-}
-
-function api_locale_language() {
-    return chrome.i18n.getUILanguage();
-}
-
-function api_getURL(url) {
-    return chrome.runtime.getURL(url)
+    var res = chrome.i18n.getMessage(message);
+    return res ? res : message;
 }
 
 function api_runtime_on_message_listener(callback) {
@@ -75,31 +69,6 @@ function api_storage_local_remove(data, callback) {
 
 function api_storage_on_change_listener(callback) {
     chrome.storage.onChanged.addListener(callback)
-}
-
-function api_tab_onupdated(callback) {
-    chrome.tabs.onUpdated.addListener(callback);
-}
-
-function api_tab_create(url, callback) {
-    let config = typeof url == 'object' ? url : {url: url};
-    chrome.tabs.create(config, callback);
-}
-
-function api_tab_get(tabId, callback) {
-    chrome.tabs.get(tabId, callback);
-}
-
-function api_tab_update(tabId, data, callback) {
-    chrome.tabs.update(tabId, data, callback)
-}
-
-function api_tab_current(callback) {
-    api_tab_query({active: true, currentWindow: true}, callback);
-}
-
-function api_tab_query(query, callback) {
-    chrome.tabs.query(query, callback);
 }
 
 function api_bookmark_query(query, callback) {

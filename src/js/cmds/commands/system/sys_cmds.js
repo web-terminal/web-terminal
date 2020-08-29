@@ -7,12 +7,7 @@ var lsCmd = function() {
             if (cmdwin.all_commands.hasOwnProperty(command.content[0])) {
                 commandObject = new cmdwin.all_commands[command.content[0]]();
                 // has sub command?
-                if (commandObject.hasOwnProperty("subCmds")) {
-                    for (let subcmd in commandObject.subCmds) {
-                        showStr += help.printCmdDetail(commandObject.subCmds[subcmd]);
-                    }
-                }
-                showStr += help.printCmdDetail(commandObject)
+                showStr += help.printCmdDetail('', commandObject);
             }
         } else {
             showStr += help.printCmds(cmdwin.all_commands);
@@ -223,9 +218,9 @@ var curlCmd = function() {
             if (command.options.hasOwnProperty('timeout')) {
                 ajaxConfig['timeout'] = command.options['timeout'];
             }
-            // webRequest
+            // ajax-request
             api_send_message({
-                type: 'webRequest', 
+                type: 'ajax-request', 
                 config: ajaxConfig,
                 callback: function(res) {
                     if (command.options.hasOwnProperty('include')) {
@@ -328,74 +323,30 @@ var selectorCmd = function() {
     }
 }
 
-var jsCmd = function() {
-    this.options = {
-        current: {
-            simple: ["c"],
-            desc: "Useage: <code>js `alert('hello web terminal.')` -c</code> Or <code>js `alert('hello web terminal.')`</code> to exec js code at the current page."
-        },
-        url: {
-            simple: "u",
-            desc: "Useage: <code>js `alert('hello web terminal.')` -u https://www.google.com</code> to exec js code at the specified url page."
-        },
-        file: {
-            simple: "f",
-            desc: "Useage: <code>js https://buttons.github.io/buttons.js -f</code> to exec js file at the specified page."
-        }
-    }
-    this.desc = "This command is very powerful. you can use javascript code to finish your task, and jquery also be supported. eg: <code>js `$('#name').val('ok')` `var a = 1;` `alert(a);`</code>"
-    this.Exec = (command, cmdwin) => {
-        let execjs = function(content) {
-            api_send_message({
-                type: "js",
-                options: command.options,
-                content: content,
-                callback: function(msg) {
-                    cmdwin.displayOutput(msg.response);
-                }
-            });
-        }
-        if (command.options.hasOwnProperty('file')) {
-            let url = isURL(command.options.file) ? command.options.file : command.content[0];
-            if (isURL(url)) {
-                let ajaxConfig = {
-                    url: url,
-                    type: 'GET',
-                    async: true,
-                    dataType: 'text'
-                }
-                api_send_message({
-                    type: 'webRequest', 
-                    config: ajaxConfig,
-                    callback: function(res) {
-                        execjs([res.data.xhr.responseText]);
-                    }
-                });
-            }
-        } else {
-            execjs(command.content);
-        }
-        
-    }
-}
-
 var helpCmd = function() {
+    var self = this;
     this.desc = "Show the command how to use. eg: help"
-    this.printCmdDetail = function(commandConfig) {
-        let showStr = '';
+    this.printCmdDetail = function(cmd, commandConfig) {
+        let showStr = '<div style="margin-left: 15px;">';
         // desc
         if (commandConfig.hasOwnProperty('desc'))
-            showStr += "<div>"+ commandConfig.desc +"</div>";
+            showStr += "<div>"+ (cmd ? cmd + ": " : '') + commandConfig.desc +"</div>";
         if (commandConfig.hasOwnProperty('options')) {
-            for (let cmd in commandConfig.options) {
-                showStr += '<div>'
-                showStr += '<span>'+(commandConfig.options[cmd].hasOwnProperty('simple') ? ('-'+commandConfig.options[cmd]['simple'][0]) : '&nbsp;&nbsp;')+'</span>'
-                showStr += '<span class="help-span">--'+cmd+'</span>'
-                showStr += '<span class="help-span">'+(commandConfig.options[cmd].hasOwnProperty('desc') ? commandConfig.options[cmd]['desc'] : '')+'</span>'
+            for (let option in commandConfig.options) {
+                showStr += '<div style="margin-left: 15px;">'
+                showStr += '<span>'+(commandConfig.options[option].hasOwnProperty('simple') ? ('-'+commandConfig.options[option]['simple'][0]) : '&nbsp;&nbsp;')+'</span>'
+                showStr += '<span class="help-span">--'+option+'</span>'
+                showStr += '<span class="help-span">'+(commandConfig.options[option].hasOwnProperty('desc') ? commandConfig.options[option]['desc'] : '')+'</span>'
                 showStr += '</div>'
             }
         }
-        return showStr;
+        if (commandConfig.hasOwnProperty('subCmds')) {
+            for (let subcmd in commandConfig.subCmds) {
+                showStr += self.printCmdDetail(subcmd, commandConfig.subCmds[subcmd]);
+            }
+        }
+        
+        return showStr+'</div>';
     }
 
     this.printCmds = function(all_commands) {
@@ -412,13 +363,7 @@ var helpCmd = function() {
             command.content.forEach(cmd => {
                 if (cmdwin.all_commands.hasOwnProperty(cmd)) {
                     commandObject = new cmdwin.all_commands[cmd]();
-                    // has sub command?
-                    if (commandObject.hasOwnProperty("subCmds")) {
-                        for (let subcmd in commandObject.subCmds) {
-                            showStr += this.printCmdDetail(commandObject.subCmds[subcmd]);
-                        }
-                    }
-                    showStr += this.printCmdDetail(commandObject);
+                    showStr += this.printCmdDetail('', commandObject);
                 } else {
                     showStr += cmdwin.getErrorOutput('the command "'+cmd+'" is invalid.')
                 }
@@ -427,140 +372,6 @@ var helpCmd = function() {
             showStr += this.printCmds(cmdwin.all_commands)
         }
         cmdwin.displayOutput(showStr);
-    }
-}
-
-var cronCmd = function() {
-    this.options = {
-        list: {
-            simple: "l",
-            desc: "Useage: <code>cron -l</code> show all the crontab tasks"
-        },
-        add: {
-            simple: "a",
-            desc: "Useage: <code>cron `00 * * * * *` `js console.log(123);` -a</code> Add a new contab task"
-        },
-        delete: {
-            simple: "D",
-            desc: "Useage: <code>cron 4f0wr4ynbs80 -D</code> delete the specified contab task"
-        },
-        showType: {
-            simple: "s",
-            desc: "Useage: <code>cron 4f0wr4ynbs80 -s background</code> Update the show type when cron job excute. the options is background or frontend."
-        },
-        openType: {
-            simple: "o",
-            desc: "Useage: <code>cron 4f0wr4ynbs80 -o auto-open</code> Update the show type when cron job excute. the option is auto-open or open-only."
-        },
-        enabled: {
-            simple: "e",
-            desc: "Useage: <code>cron 4f0wr4ynbs80 -e 0</code> Update the enabled status. the options is 0 or 1"
-        },
-        url: {
-            simple: "u",
-            desc: "Useage: <code>cron 4f0wr4ynbs80 -u http://www.google.com</code> Update the host page url address."
-        },
-        rule: {
-            simple: "r",
-            desc: "Useage: <code>cron 4f0wr4ynbs80 -r `01 * * * * *`</code> Update the rule of cron."
-        },
-        command: {
-            simple: "c",
-            desc: "Useage: <code>cron 4f0wr4ynbs80 -c `time -t`</code> Update the executor command."
-        },
-    }
-    this.desc = "Useage: <code>cron `*/3 * * * * *` \"js `console.log('hello WebTerminal!')`\" -a</code>";
-    this.defaultOption = "list";
-    this.Exec = function(command, cmdwin) {
-        if (command.options.hasOwnProperty("list")) {
-            api_send_message({
-                type: "cron-job",
-                options: {
-                    type: "list"
-                },
-                callback: function(msg) {
-                    let cronJobs = msg.data;
-                    if (JSON.stringify(cronJobs) == '{}') {
-                        cmdwin.displayOutput("You haven't added cron tasks.")
-                    } else {
-                        let showStr = '<table width="100%"><tr><th>id</th><th>rule</th><th>cmds</th><th>enabled</th><th>showType</th><th>openType</th></tr>';
-                        for (let id in cronJobs) {
-                            showStr += '<tr title="'+cronJobs[id]['url']+'"><td>'+id+'</td>';
-                            showStr += '<td>'+cronJobs[id]['rule']+'</td>';
-                            showStr += '<td>'+cronJobs[id]['cmds'].join('<br/>')+'</td>';
-                            showStr += '<td>'+cronJobs[id]['enabled']+'</td>';
-                            showStr += '<td>'+cronJobs[id]['showType']+'</td>';
-                            showStr += '<td>'+cronJobs[id]['openType']+'</td>';
-                            // showStr += '<td>'+cronJobs[id]['times']+'</td>';
-                            showStr += '</tr>';
-                        }
-                        showStr += '</table>'
-                        cmdwin.displayOutput(showStr);
-                    }
-                }
-            });
-        } else if (command.options.hasOwnProperty("add")) {
-            let cronRule = command.content[0];
-            command.content.splice(0, 1)
-            // console.log("add cron:", cronRule, command.content)
-            api_send_message({
-                type: "cron-job",
-                options: {
-                    type: "add",
-                    rule: cronRule,
-                    cmds: command.content
-                },
-                callback: function(msg) {
-                    cmdwin.handleInput('cron -l');
-                }
-            });
-        } else if (command.options.hasOwnProperty("delete")) {
-            let id = command.options.delete;
-            if (typeof id == "boolean") id = command.content[0];
-            api_send_message({
-                type: "cron-job",
-                options: {
-                    type: "delete",
-                    id: id
-                },
-                callback: function(msg) {
-                    cmdwin.handleInput('cron -l');
-                }
-            });
-        } else {
-            let options = {
-                type: "update"
-            }
-            if (command.content.length > 0) {
-                options['id'] = command.content[0];
-            }
-            if (command.options.hasOwnProperty('enabled')) {
-                options['enabled'] = command.options.enabled ? true : false;
-            }
-            if (command.options.hasOwnProperty('showType') && ["background", "frontend"].indexOf(command.options.showType) > -1) {
-                options['showType'] = command.options.showType;
-            }
-            if (command.options.hasOwnProperty('openType') && ["auto-open", "only-open"].indexOf(command.options.openType) > -1) {
-                options['openType'] = command.options.openType;
-            }
-            if (command.options.hasOwnProperty('url') && isURL(command.options.url)) {
-                options['url'] = command.options.url;
-            }
-            if (command.options.hasOwnProperty('rule')) {
-                options['rule'] = command.options.rule;
-            }
-            if (command.options.hasOwnProperty('cmds')) {
-                options['cmds'] = typeof command.options.cmds == 'string' ? [command.options.cmds] : command.options.cmds;
-            }
-
-            api_send_message({
-                type: "cron-job",
-                options: options,
-                callback: function(msg) {
-                    cmdwin.handleInput('cron -l');
-                }
-            });
-        }
     }
 }
 
@@ -630,8 +441,4 @@ var timeCmd = function() {
             cmdwin.displayOutput(year+'-'+month+'-'+date1+' '+hour+':'+minutes+':'+second);
         }
     }
-}
-
-var pipeCmd = function() {
-
 }

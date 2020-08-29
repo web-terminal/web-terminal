@@ -38,6 +38,23 @@ function message_cmdhub(message, sender, callback) {
             meta.data = CmdHub;
             api_send_callback_message(sender, message, {meta: meta});
         break;
+        case 'custom':
+            if (message.hasOwnProperty('newCmd') && message.hasOwnProperty('cmdContent')) {
+                let cmdset = {};
+                newCmd = message.newCmd;
+                cmdset['cmd:code:'+newCmd] = message.cmdContent;
+                CmdHub[newCmd] = {
+                    version: '1.0.0',
+                    site: '*',
+                    index_func: newCmd+'Cmd' ,
+                }
+                api_storage_sync_set({'cmd:hub': CmdHub});
+                api_storage_local_set(cmdset);
+                cmdhub_update_all_tabs_cmd(newCmd);
+                meta.data = CmdHub;
+                api_send_callback_message(sender, message, {meta: meta});
+            }
+        break;
     }
 }
 

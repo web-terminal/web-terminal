@@ -12,19 +12,11 @@ function response_chan_get() {
 
 // 监听注入页面事件
 api_runtime_on_message_listener(function(message, sender, callback) {
-    // console.log(sender)
     switch (message.type) {
     case "js":
     case "selector":
         let sendMessage = function(tab) {
-            // console.log("send tab id=", tab.id);
             if (message.type == 'js') {
-                if (tab.url.startsWith('chrome-extension://'+sender.id)) {
-                    let callbackMessage = message;
-                    callbackMessage['response'] = "you can only exec js command at the normal url page, can not exec js at the extension pages.";
-                    api_send_callback_message(sender, message, callbackMessage);
-                    return false;
-                }
                 let content = message.content.join('')
                 api_execute_script(tab.id, {code: content}, function(result) {
                     for (let i in result) {
@@ -36,14 +28,12 @@ api_runtime_on_message_listener(function(message, sender, callback) {
             } else {
                 api_send_tab_message(tab.id, message, function(response) {
                     response_chan_set(message['UID'], response);
-                    // console.log(response);
                     let callbackMessage = message;
                     callbackMessage['response'] = response;
                     api_send_callback_message(sender, message, callbackMessage);
                 });
             }
         }
-        // console.log(message.options)
         if (message.options.hasOwnProperty('url')) {
             if (!tabChan.hasOwnProperty(message.options.url)) {
                 api_tab_create(message.options.url, function(tab) {
@@ -68,7 +58,7 @@ api_runtime_on_message_listener(function(message, sender, callback) {
             sendMessage(sender.tab);
         }
     break;
-    case "webRequest":
+    case "ajax-request":
         if (message.hasOwnProperty('config')) {
             message.config['complete'] = function(xhr, ts) {
                 api_send_callback_message(sender, message, {
@@ -87,6 +77,22 @@ api_runtime_on_message_listener(function(message, sender, callback) {
                 data: result
             });
         });
+    break;
+    case "browser-tabs":
+        if (message.options.type == 'query') {
+            api_tab_query(message.options.query, function(tabs) {
+                api_send_callback_message(sender, message, {
+                    data: tabs
+                });
+            });
+        } else if (message.options.type == 'update') {
+            api_tab_update(message.options.tabId, message.options.updateProperties, function(tab) {
+                api_send_callback_message(sender, message, {
+                    data: tab
+                });
+            });
+        }
+        
     break;
     case "browser-bookmarks":
         if (message.options.type == 'query') {
@@ -125,20 +131,23 @@ api_runtime_on_message_listener(function(message, sender, callback) {
     break;
     case "exec-remote-command":
         var config = message.config;
-        api_tab_query({url: config.hasOwnProperty('match_url') ? config.match_url : config.site}, function(tabs) {
+        api_tab_query({url: config.hasOwnProperty('match_url') ? config.match_url : message.site}, function(tabs) {
             if (tabs && tabs.length > 0) {
+                var tab = [];
                 for (let i in tabs) {
+                    tab = tabs[i];
                     api_send_tab_message(tabs[i].id, {type: "remote-command-run", item: message.item}, function(result) {
-                        api_send_callback_message(sender, message, result);
+                        api_send_callback_message(sender, message, {'data': result});
                     });
                     if (!config.hasOwnProperty('exec_all_match_url') || !config.exec_all_match_url) break;
                 }
+                if (config.hasOwnProperty('active_url') && config.active_url) api_tab_update(tab.id, {active: true});
             } else {
                 if (config.hasOwnProperty('auto_open') && config.auto_open) {
-                    api_tab_create({url: config.site, active: config.hasOwnProperty('active_url') ? config.active_url : true}, function(tab) {
+                    api_tab_create({url: message.site, active: config.hasOwnProperty('active_url') ? config.active_url : true}, function(tab) {
                         waitTabComplete(tab, 300, function(tab) {
                             api_send_tab_message(tab.id, {type: "remote-command-run", item: message.item}, function(result) {
-                                api_send_callback_message(sender, message, {'data':result});
+                                api_send_callback_message(sender, message, {'data': result});
                             });
                         });
                     });
@@ -152,18 +161,18 @@ api_runtime_on_message_listener(function(message, sender, callback) {
         api_tab_query({url: config.hasOwnProperty('match_url') ? config.match_url : config.site}, function(tabs) {
             if (tabs && tabs.length > 0) {
                 for (let i in tabs) {
+                    console.log(tabs[i].id)
                     api_send_tab_message(tabs[i].id, {type: "remote-tab-run", item: message.item}, function(result) {
-                        api_send_callback_message(sender, message, result);
+                        api_send_callback_message(sender, message, {'data': result});
                     });
                     break;
                 }
             } else {
                 if (config.hasOwnProperty('auto_open') && config.auto_open) {
-                    console.log({url: config.site, active: config.hasOwnProperty('active_url') ? config.active_url : true})
                     api_tab_create({url: config.site, active: config.hasOwnProperty('active_url') ? config.active_url : true}, function(tab) {
                         waitTabComplete(tab, 300, function(tab) {
                             api_send_tab_message(tab.id, {type: "remote-tab-run", item: message.item}, function(result) {
-                                api_send_callback_message(sender, message, {'data':result});
+                                api_send_callback_message(sender, message, {'data': result});
                             });
                         });
                     });
