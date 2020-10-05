@@ -36,3 +36,7 @@ function api_tab_current(callback) {
 function api_tab_query(query, callback) {
     chrome.tabs.query(query, callback);
 }
+
+function api_tab_remove(tabIds, callback) {
+    chrome.tabs.remove(tabIds, callback)
+}

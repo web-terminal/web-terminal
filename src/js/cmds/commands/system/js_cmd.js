@@ -8,6 +8,11 @@ var jsCmd = function() {
             simple: "u",
             desc: "Useage: <code>js `alert('hello web terminal.')` -u https://www.google.com</code> to exec js code at the specified url page."
         },
+        active_tab: {
+            simple: "a",
+            dataType: 'bool',
+            desc: "Useage: <code>js `alert('hello web terminal.')` -u https://www.google.com -a</code> to exec js code at the specified url page and active this page tab."
+        },
         file: {
             simple: "f",
             desc: "Useage: <code>js https://buttons.github.io/buttons.js -f</code> to exec js file at the specified page."
@@ -20,6 +25,7 @@ var jsCmd = function() {
                 type: "js",
                 options: command.options,
                 content: content,
+                feed_data: cmdwin.feed_data,
                 callback: function(msg) {
                     cmdwin.displayOutput(msg.response);
                 }

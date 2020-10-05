@@ -19,7 +19,7 @@ $.fn.extend({
           });
           setAutoHeight(this).on('focus', function () {
             setAutoHeight(this);
-        });
+          });
       });
       function setAutoHeight(elem) {
           var $obj = $(elem);
@@ -235,11 +235,11 @@ $.fn.extend({
     }
   }(this, function () {
     "use strict";
-  
     var TerminalWin = function (user_config) {
       this.keys_array    = [9, 13, 38, 40, 27],
+      this.timeout       = 30;
       this.style         = 'dark',
-      this.output_init   = '<code><div>Welcome to <a href="https://github.com/web-terminal/web-terminal/wiki" target="_blank">Web-Terminal</a> v1.2.2</div><div>Use <code>help</code> to show commands. <code>help js</code> to show js command instructions.</div></code>',
+      this.output_init   = '<code><div>'+api_locales('terminal_desc', api_locales('version'))+'</div></code>',
       this.popup         = true,
       this.prompt_str    = '$ ',
       this.autofill      = '',
@@ -393,14 +393,12 @@ $.fn.extend({
       if (encode) {
         cmd_out = htmlEncode(cmd_out)
       }
-
+      cmd_out && (this.cmd_output = cmd_out);
       cmd_out && this.output.append('<code>'+cmd_out+'</code>');
   
       if (this.options.talk) {
         this.speakOutput(cmd_out);
       }
-  
-      this.cmd_stack.reset();
   
       this.input.val(this.autofill).removeAttr('disabled');
   
@@ -443,7 +441,7 @@ $.fn.extend({
           }
         }
       } else {
-        throw "Unrecognised command "+command_name+".";
+        throw "Unrecognised command <code>"+command_name+"</code>";
       }
     }
   
@@ -560,22 +558,93 @@ $.fn.extend({
     /**
      * Do something
      */
-    TerminalWin.prototype.handleInput = function(input_str, from_remote, callback) {
+    TerminalWin.prototype.handleInput = function(input_str, from_remote) {
+      var self = this;
       if (input_str) {
-        var self = this;
         try {
-          var command = new Command(input_str, this.prompt_str);
-          command.Exec(this, from_remote, function(result) {
-            self.displayOutput(self.formateOutput(result, from_remote));
-            if (typeof callback == 'function') callback(result);
-          });
+          self.pipelineSeriesCommands(self.splitCommands(input_str), from_remote);
         } catch (err) {
-          this.displayOutput(err);
+          self.displayOutput(err);
         }
       } else {
-        this.displayInput('');
-        this.displayOutput('');
+        self.displayInput('');
+        self.displayOutput('');
       }
+    }
+
+    TerminalWin.prototype.pipelineSeriesCommands = function(command_list, from_remote) {
+      var self = this;
+      var serialExec = function(output, i) {
+        // console.log("command:", command_list);
+        if (i < command_list.length) {
+          (new Promise(function (resolve, reject) {
+            self.feed_data = output;
+            try {
+              self.ExecCommands(command_list[i], from_remote);
+              // 等待命令返回结果
+              var times = 0;
+              var intervalHandle = setInterval(function() {
+                times++;
+                // console.log("set interval: ================");
+                if (self.cmd_output != -1 || times/10 >= self.timeout) {
+                  // console.log("clearInterval: ================", self.cmd_output);
+                  clearInterval(intervalHandle);
+                  resolve(self.cmd_output);
+                }
+              }, 100);
+            } catch (e) {
+              console.log(e)
+              reject(e)
+            }
+          })).then(function(result) {
+            serialExec(result, ++i);
+          }, function(error) {
+            self.displayOutput(error)
+          });
+        }
+      }
+
+      var i = 0;
+      serialExec(null, i);
+    }
+
+    TerminalWin.prototype.pipelineParallelCommands = function(command_list, from_remote) {
+      for (var i in command_list) {
+        this.ExecCommands(command_list[i], from_remote);
+      }
+    }
+
+    TerminalWin.prototype.ExecCommands = function(command_line, from_remote) {
+      var self = this;
+      var command = new Command(command_line, self.prompt_str);
+      self.cmd_output = -1;
+      command.Exec(self, from_remote, function(result) {
+        self.displayOutput(self.formateOutput(result, from_remote));
+      });
+    }
+
+    TerminalWin.prototype.splitCommands = function(input_str) {
+      let command_list = [];
+      let quote = "";
+
+      for (let i=0; i<input_str.length; i++) {
+        let chr = input_str.charAt(i);
+        if (chr == '"' || chr == "'" || chr == "`") {
+          // 如果是开头，则开始对字符串进行包裹
+          if (!quote) {
+            quote = chr;
+          } else if (quote && quote == chr && input_str.charCodeAt(i-1) != 92) {  // 如果是结尾
+            quote = "";
+          }
+        } else if (!quote && chr == '|') {
+          command_list.push(input_str.substr(0, i));
+          return command_list.concat(this.splitCommands(input_str.substring(i+1)));
+        }
+      }
+      if (input_str.trim()) {
+        command_list.push(input_str);
+      }
+      return command_list;
     }
 
     TerminalWin.prototype.formateOutput = function(result, from_remote) {
@@ -609,20 +678,12 @@ $.fn.extend({
               break;
             case 'command-list':
               if (!from_remote && data && typeof data == 'object' && data.length > 0) {
-                var serialExec = function(i) {
-                  if (i < data.length) {
-                    self.handleInput(data[i], from_remote, function() {
-                      setTimeout(function() {
-                        serialExec(++i);
-                      }, 1000);
-                    });
-                  }
-                }
-                var i = 0;
-                serialExec(i);
+                self.pipelineSeriesCommands(data, from_remote);
               }
               return output;
         }
+      } else if (result) {
+        output = result;
       }
       return output
   }
@@ -661,6 +722,7 @@ $.fn.extend({
      * Handle keypresses
      */
     TerminalWin.prototype.handleKeyDown = function(e) {
+      var self = this;
       var keyCode = e.keyCode || e.which,
       input_str = this.input.val();
       e.stopPropagation();
@@ -672,6 +734,7 @@ $.fn.extend({
         this.tabComplete(input_str);
       } else if (e.ctrlKey && keyCode == 67) {
         this.displayInput(input_str+"^C");
+        this.input.val("");
         return false;
       } else {
         if (keyCode === 13) { // enter
@@ -686,7 +749,6 @@ $.fn.extend({
             }
     
             if (e.ctrlKey) {
-              this.cmd_stack.push(input_str);
               if (isURL(input_str)) {
                 this.goToURL(input_str);
               } else {
@@ -694,19 +756,22 @@ $.fn.extend({
               }
             } else {
               this.disableInput();
-              // push command to stack if using text input, i.e. no passwords
-              if (this.input.get(0).type !== 'password' && input_str) {
-                this.cmd_stack.push(input_str);
-              }
-    
               this.handleInput(input_str);
+            }
+
+            // push command to stack if using text input, i.e. no passwords
+            if (this.input.get(0).type !== 'password' && input_str) {
+              this.cmd_stack.push(input_str);
+              setTimeout(function() {
+                self.cmd_stack.reset();
+              }, 200);
             }
           }
           
         } else if (keyCode === 38) { // up arrow
-          if (input_str !== "" && this.cmd_stack.getCur() === this.cmd_stack.getSize()) {
-            this.cmd_stack.push(input_str);
-          }
+          // if (input_str !== "" && this.cmd_stack.getCur() === this.cmd_stack.getSize()) {
+          //   this.cmd_stack.push(input_str);
+          // }
   
           this.input.val(this.cmd_stack.prev());
           this.resizeInput();

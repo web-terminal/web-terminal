@@ -1,5 +1,5 @@
 # Web terminal
-### Web Terminal is a web terminal, similar to a Linux shell. You can use js to write scripts to handle some automated tasks. js can control any isolated web resources. At the same time, we provide some effective commands to help you improve your work efficiency, and you can also customize some commands to complete your personalized needs, and you can also add commands provided by third parties. Although there are still few third-party libraries, this Everything is a good start. I hope you can submit the commands you wrote to the [cmdhub](https://github.com/web-terminal/cmdhub) repository to share with others.
+Web Terminal is a web terminal, similar to a Linux shell. You can use js to write scripts to handle some automated tasks. js can control any isolated web resources. At the same time, we provide some effective commands to help you improve your work efficiency, and you can also customize some commands to complete your personalized needs, and you can also add commands provided by third parties. Although there are still few third-party libraries, this Everything is a good start. I hope you can submit the commands you wrote to the [cmdhub](https://github.com/web-terminal/cmdhub) repository to share with others.
 Well, let's start to see what amazing features are there.
 ## Installation
 [chrome plugin](https://chrome.google.com/webstore/detail/webterminal/djnneaagmekpmmbmeicecdkgcnkcnhle)
@@ -99,6 +99,21 @@ Browser-related commands, including subcommands: tabs, bookmark, history, notice
 -T --title Notification title  
 -m --message The main content of the notification message.  
 -M --context Message backup notification content with small font
+
+
+### ｜ Pipeline
+Pipeline command, multiple commands can be executed continuously through "|", and the last command can get the output of the previous command, which can be passed through the TerminalFeedArgs variable. You can directly use TerminalFeedArgs in the js code or command line parameters to get the previous command The output information.
+
+Open web-terminal on any normal page and enter the following command:
+`js $.trim($("#wiki-body").find("h1").text()) -u https://github.com/web-terminal/web-terminal/wiki/%E4%B8%AD%E6%96%87 -a false | js -u https://www.baidu.com/s?wd=TerminalFeedArgs`  
+
+or  
+
+`js $.trim($("#wiki-body").find("h1").text()) -u https://github.com/web-terminal/web-terminal/wiki/%E4%B8%AD%E6%96%87 -a false | js $("#kw").val(TerminalFeedArgs);$("#su").trigger("click"); -u https://www.baidu.com`  
+This command realizes that the wiki title content is obtained from this page of `https://github.com/web-terminal/web-terminal/wiki/%E4%B8%AD%E6%96%87`, and then passed to Baidu for automatic search   
+
+This is a very useful feature, cross-page chain programming can be achieved through pipeline commands.
+
 
 ### cmd
 Command management tool, through this command you can add third-party commands or custom commands,

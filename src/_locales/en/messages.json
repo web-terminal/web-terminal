@@ -2,7 +2,13 @@
     "appName": {
         "message": "WebTerminal"
     },
+    "version": {
+        "message": "v1.2.4"
+    },
     "description": {
         "message": "This is a browser terminal, you can use it to complete some automated tasks, if you know js, then it will be a powerful tool for you"
+    },
+    "terminal_desc": {
+        "message": "Welcome to <a href=\"https://github.com/web-terminal/web-terminal/wiki/English\" target=\"_blank\">Web-Terminal</a> $1</div><div>Use <code>help</code> to show commands. <code>help js</code> to show js command instructions."
     }
 }

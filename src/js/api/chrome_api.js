@@ -4,8 +4,8 @@ function getUID(length) {
 }
 
 // 获取本地化语言
-function api_locales(message) {
-    var res = chrome.i18n.getMessage(message);
+function api_locales(message, placeholders) {
+    var res = chrome.i18n.getMessage(message, placeholders);
     return res ? res : message;
 }
 

@@ -125,7 +125,7 @@ Command.prototype.Exec = function(terminal, from_remote, callback) {
         }
         if (self.options.hasOwnProperty('help')) {
             var help = new helpCmd();
-            throw help.printCmdDetail('', instance);
+            return help.printCmdDetail('', instance);
         } else if (exec_type == 'Exec') {
             if (typeof instance.Exec == 'function') {
                 let result = instance.Exec(self.GetInputArgs(), terminal);
@@ -250,6 +250,22 @@ Command.prototype.TransferSimpleOptions = function(cmdInstance, index) {
         // if empty options and then use default option
         if (JSON.stringify(newOptions) === '{}' && cmdInstance.hasOwnProperty("defaultOption")) {
             newOptions[cmdInstance.defaultOption] = true;
+        }
+    }
+
+    // parse option value
+    var configOption = cmdInstance.hasOwnProperty('options') ? cmdInstance.options : {};
+    for (var opt in newOptions) {
+        if (configOption.hasOwnProperty(opt) && configOption[opt].hasOwnProperty('dataType')) {
+            switch (configOption[opt].dataType) {
+                case 'bool':
+                    if (!newOptions[opt] || ["false", "0"].indexOf(newOptions[opt]) > -1) {
+                        newOptions[opt] = false;
+                    } else {
+                        newOptions[opt] = true;
+                    }
+                break;
+            }
         }
     }
 

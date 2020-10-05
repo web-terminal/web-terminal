@@ -38,6 +38,11 @@ function buildLibJs() {
         .pipe(dest("dest/js/libs/"));
 }
 
+function buildVendorJs() {
+    return src(["node_modules/xterm/lib/*", "node_modules/xterm/css/xterm.css"])
+        .pipe(dest("dest/vendor/xterm"));
+}
+
 function buildCmdJs() {
     return src(["src/js/cmds/commands/**/*.js", "src/js/cmds/config.js", "src/js/cmds/*.js"])
         .pipe(concat('cmd.js'))
@@ -80,5 +85,6 @@ function taskWatch() {
     watch('./src/js/api/*.js', buildApiJs);
 }
 
+// buildVendorJs
 exports.default = series(clean, parallel(buildHtml, buildJson, buildIcon, buildLocales, buildLess, 
     buildBackgroundJs, buildLibJs, buildCmdJs, buildCommonJs, buildContentJs, buildApiJs), taskWatch)

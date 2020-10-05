@@ -1,5 +1,5 @@
-# web-terminal Web终端
-### Web Terminal 是一个web终端，类似Linux shell，你可以使用js来编写脚本处理一些自动化任务，js能够操控任何隔离的web资源。同时我们提供了一些有效的命令来帮助你提升工作效率，而且你也可以自定义一些命令来完成个性化需求，同时你也可以添加第三方提供的命令，虽然第三方库还很少，但这一切都是个很好的开始，期待你能把自己写的命令提交到 [cmdhub](https://github.com/web-terminal/cmdhub) 仓库共享给其他人。
+# Web终端
+Web Terminal 是一个web终端，类似Linux shell，你可以使用js来编写脚本处理一些自动化任务，js能够操控任何隔离的web资源。同时我们提供了一些有效的命令来帮助你提升工作效率，而且你也可以自定义一些命令来完成个性化需求，同时你也可以添加第三方提供的命令，虽然第三方库还很少，但这一切都是个很好的开始，期待你能把自己写的命令提交到 [cmdhub](https://github.com/web-terminal/cmdhub) 仓库共享给其他人。
 好了我们开始瞧瞧有哪些惊艳的功能吧。
 ## 安装
 [chrome插件](https://chrome.google.com/webstore/detail/webterminal/djnneaagmekpmmbmeicecdkgcnkcnhle)
@@ -98,6 +98,19 @@ cron可以帮助你创建定时任务
 -T --title 通知标题  
 -m --message 通知消息主要内容.
 -M --context 带有小字体的消息备用通知内容  
+
+### ｜ 管道
+管道命令，通过“ ｜”可以连续执行多个命令，并且后一个命令可以获取到上一个命令的输出，通过TerminalFeedArgs变量进行传递，在js代码中或者命令行参数中可以直接使用TerminalFeedArgs获取上一命令输出的信息。  
+
+在任意正常页面打开web-terminal 然后输入如下命令：
+`js $.trim($("#wiki-body").find("h1").text()) -u https://github.com/web-terminal/web-terminal/wiki/%E4%B8%AD%E6%96%87 -a false | js -u https://www.baidu.com/s?wd=TerminalFeedArgs`  
+
+或者  
+
+`js $.trim($("#wiki-body").find("h1").text()) -u https://github.com/web-terminal/web-terminal/wiki/%E4%B8%AD%E6%96%87 -a false | js $("#kw").val(TerminalFeedArgs);$("#su").trigger("click"); -u https://www.baidu.com`  
+此命令实现了从 `https://github.com/web-terminal/web-terminal/wiki/%E4%B8%AD%E6%96%87` 这个页面获取wiki标题内容，然后传递给百度进行自动搜索  
+
+这是一个非常有用的特性，通过管道命令可以实现跨页面链式编程。
 
 ### cmd
 命令管理工具，通过这个命令使得你可以添加第三方命令或自定义命令，

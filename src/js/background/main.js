@@ -17,7 +17,7 @@ api_runtime_on_message_listener(function(message, sender, callback) {
     case "selector":
         let sendMessage = function(tab) {
             if (message.type == 'js') {
-                let content = message.content.join('')
+                let content = (message.feed_data ? "var TerminalFeedArgs="+message.feed_data+";" : '')+message.content.join('')
                 api_execute_script(tab.id, {code: content}, function(result) {
                     for (let i in result) {
                         let callbackMessage = message;
@@ -35,21 +35,25 @@ api_runtime_on_message_listener(function(message, sender, callback) {
             }
         }
         if (message.options.hasOwnProperty('url')) {
+            if (message.options.url.indexOf("TerminalFeedArgs") > -1) {
+                var feed_data = message.feed_data ? message.feed_data.slice(1, -1) : '';
+                message.options.url = message.options.url.replace("TerminalFeedArgs", feed_data);
+            }
             if (!tabChan.hasOwnProperty(message.options.url)) {
-                api_tab_create(message.options.url, function(tab) {
+                api_tab_create({url: message.options.url, active: message.options.hasOwnProperty('active_tab') ? message.options.active_tab : true}, function(tab) {
                     tabChan[message.options.url] = tab;
                     waitTabComplete(tab, 300, sendMessage);
                 });
             } else {
                 api_tab_get(tabChan[message.options.url].id, function(tab) {
                     if (!tab) {
-                        api_tab_create(message.options.url, function(tab) {
+                        api_tab_create({url: message.options.url, active: message.options.hasOwnProperty('active_tab') ? message.options.active_tab : true}, function(tab) {
                             tabChan[message.options.url] = tab;
                             waitTabComplete(tab, 300, sendMessage);
                         });
                     } else {
                         // active tab
-                        api_tab_update(tab.id, {active: true})
+                        api_tab_update(tab.id, {active: message.options.hasOwnProperty('active_tab') ? message.options.active_tab : true})
                         sendMessage(tab);
                     }
                 });

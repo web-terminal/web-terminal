@@ -41,6 +41,7 @@ function updateCronItem(options) {
             if (!options.hasOwnProperty('enabled'))
                 options['enabled'] = cronJobMaps[id]['enabled'];
         }
+        // return
         if (options.hasOwnProperty('cmds')) cronJobMaps[id]['cmds'] = options.cmds;
         if (options.hasOwnProperty('showType')) cronJobMaps[id]['showType'] = options.showType;
         if (options.hasOwnProperty('openType')) cronJobMaps[id]['openType'] = options.openType;
@@ -68,12 +69,16 @@ function cronItemRunStart(item) {
     try {
         let openTabToConnect = function(tab) {
             if (!tab) {
-                if (item.openType == "auto-open") {
+                if (item.openType != "open-only") {
                     api_tab_create(item.url, function(tab) {
                         cronJobStacks[item.id]['tab'] = tab;
                         waitTabComplete(tab, 300, function(tab) {
                             item.times++;
-                            api_send_tab_message(tab.id, {type: "remote-command-run", item: item})
+                            api_send_tab_message(tab.id, {type: "remote-command-run", item: item}, function(response) {
+                                if (item.openType == "finished-close") {
+                                    api_tab_remove(tab.id);
+                                }
+                            })
                         });
                     });
                 }
@@ -103,7 +108,6 @@ function cronItemRunStart(item) {
 function cronItemRunStop(item) {
     if (cronJobStacks.hasOwnProperty(item.id) && cronJobStacks[item.id].hasOwnProperty('job')) {
         cronJobStacks[item.id]['job'].Stop();
-        item.enabled = false;
         delete cronJobStacks[item.id];
     }
 }

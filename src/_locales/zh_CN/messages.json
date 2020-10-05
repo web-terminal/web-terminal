@@ -4,5 +4,8 @@
     },
     "description": {
         "message": "这是一个浏览器终端，你可以用它来完成一些自动化任务，如果你会js的话，那么它将是你强有力的工具。"
+    },
+    "terminal_desc": {
+        "message": "欢迎使用 <a href=\"https://github.com/web-terminal/web-terminal/wiki/中文\" target=\"_blank\">Web-Terminal</a> $1</div><div>使用 <code>help</code> 展示所有可用命令， <code>help js</code> 展示js命令使用文档。"
     }
 }

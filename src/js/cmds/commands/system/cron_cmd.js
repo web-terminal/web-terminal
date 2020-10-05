@@ -18,7 +18,7 @@ var cronCmd = function() {
         },
         openType: {
             simple: "o",
-            desc: "Useage: <code>cron 4f0wr4ynbs80 -o auto-open</code> Update the show type when cron job excute. the option is auto-open or open-only."
+            desc: "Useage: <code>cron 4f0wr4ynbs80 -o auto-open</code> Update the show type when cron job excute. the option is auto-open, open-only, finished-close."
         },
         enabled: {
             simple: "e",
@@ -68,16 +68,26 @@ var cronCmd = function() {
                 }
             });
         } else if (command.options.hasOwnProperty("add")) {
-            let cronRule = command.content[0];
+            var cronRule = command.content[0];
             command.content.splice(0, 1)
+            var options = {
+                type: "add",
+                rule: cronRule,
+                cmds: command.content
+            }
+            if (command.options.hasOwnProperty('showType') && ["background", "frontend"].indexOf(command.options.showType) > -1) {
+                options['showType'] = command.options.showType
+            }
+            if (command.options.hasOwnProperty('openType') && ["auto-open", "only-open", "finished-close"].indexOf(command.options.openType) > -1) {
+                options['openType'] = command.options.openType
+            }
+            if (command.options.hasOwnProperty('url')) {
+                options['url'] = command.options.url
+            }
             // console.log("add cron:", cronRule, command.content)
             api_send_message({
                 type: "cron-job",
-                options: {
-                    type: "add",
-                    rule: cronRule,
-                    cmds: command.content
-                },
+                options: options,
                 callback: function(msg) {
                     cmdwin.handleInput('cron -l');
                 }
@@ -96,7 +106,7 @@ var cronCmd = function() {
                 }
             });
         } else {
-            let options = {
+            var options = {
                 type: "update"
             }
             if (command.content.length > 0) {
@@ -108,7 +118,7 @@ var cronCmd = function() {
             if (command.options.hasOwnProperty('showType') && ["background", "frontend"].indexOf(command.options.showType) > -1) {
                 options['showType'] = command.options.showType;
             }
-            if (command.options.hasOwnProperty('openType') && ["auto-open", "only-open"].indexOf(command.options.openType) > -1) {
+            if (command.options.hasOwnProperty('openType') && ["auto-open", "only-open", "finished-close"].indexOf(command.options.openType) > -1) {
                 options['openType'] = command.options.openType;
             }
             if (command.options.hasOwnProperty('url') && isURL(command.options.url)) {
@@ -117,8 +127,8 @@ var cronCmd = function() {
             if (command.options.hasOwnProperty('rule')) {
                 options['rule'] = command.options.rule;
             }
-            if (command.options.hasOwnProperty('cmds')) {
-                options['cmds'] = typeof command.options.cmds == 'string' ? [command.options.cmds] : command.options.cmds;
+            if (command.options.hasOwnProperty('command')) {
+                options['cmds'] = typeof command.options.command == 'string' ? [command.options.command] : command.options.command;
             }
 
             api_send_message({
