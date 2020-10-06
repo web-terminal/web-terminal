@@ -3,7 +3,7 @@
         "message": "WebTerminal"
     },
     "version": {
-        "message": "v1.2.4"
+        "message": "v1.2.5"
     },
     "description": {
         "message": "This is a browser terminal, you can use it to complete some automated tasks, if you know js, then it will be a powerful tool for you"
