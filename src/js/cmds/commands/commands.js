@@ -1,4 +1,4 @@
-var Command = function(input, prompt) {
+var Command = function (input, prompt) {
     this.input = input;
     this.prompt = '';
     this.name = '';
@@ -10,24 +10,24 @@ var Command = function(input, prompt) {
     this.InputParser(input);
 }
 
-Command.prototype.PrompParser = function(prompt) {
+Command.prototype.PrompParser = function (prompt) {
     if (prompt.length > 1) {
         this.name = prompt.substring(1).trim();
         this.prompt = this.name;
     }
 }
 
-Command.prototype.displayCommand = function(terminal, commands, cmd) {
+Command.prototype.displayCommand = function (terminal, commands, cmd) {
     var autocompletions = [];
     for (let key in commands) {
         if (key == cmd) {
-            terminal.input.val(terminal.input.val()+cmd+" ");
+            terminal.input.val(terminal.input.val() + cmd + " ");
             let cmdInstance = this.getCmdInstance(commands[key]);
             if (cmdInstance && cmdInstance.hasOwnProperty('subCmds')) {
                 let subCmd = this.content.length > 0 ? this.content.shift() : '';
                 this.displayCommand(terminal, cmdInstance.subCmds, subCmd);
             } else if (this.content.length > 0) {
-                terminal.input.val(terminal.input.val()+this.content.join(' '));
+                terminal.input.val(terminal.input.val() + this.content.join(' '));
             }
             break;
         } else if (key.startsWith(cmd)) {
@@ -35,14 +35,14 @@ Command.prototype.displayCommand = function(terminal, commands, cmd) {
         }
     }
     if (autocompletions.length == 1) {
-        terminal.input.val(terminal.input.val()+autocompletions[0]+" ");
+        terminal.input.val(terminal.input.val() + autocompletions[0] + " ");
     } else if (autocompletions.length > 1) {
         terminal.displayOutput(autocompletions.join(', '));
         terminal.input.val(this.input);
     }
 }
 
-Command.prototype.GetInputArgs = function() {
+Command.prototype.GetInputArgs = function () {
     return {
         input: this.input,
         cmd: this.name,
@@ -52,12 +52,12 @@ Command.prototype.GetInputArgs = function() {
     }
 }
 
-Command.prototype.TabCompleteSystem = function(terminal) {
+Command.prototype.TabCompleteSystem = function (terminal) {
     terminal.input.val('');
     this.displayCommand(terminal, terminal.all_commands, this.name);
 }
 
-Command.prototype.TabComplete = function(terminal, from_remote) {
+Command.prototype.TabComplete = function (terminal, from_remote) {
     var self = this;
     var cmdInstance = this.getCmdInstance(terminal.all_commands[this.name]);
     if (cmdInstance && typeof cmdInstance.TabComplete == 'function') {
@@ -69,15 +69,15 @@ Command.prototype.TabComplete = function(terminal, from_remote) {
                 item: {
                     'showType': 'background',
                     'input': self.input,
-                }, 
-                callback: function(result) {
+                },
+                callback: function (result) {
                     var message = result && result.hasOwnProperty('data') ? result.data : [];
                     terminal.displayOutput(terminal.formateOutput(message, from_remote));
                     terminal.input.val(self.input);
                 }
             });
         } else {
-            var result =  cmdInstance.TabComplete(this.GetInputArgs());
+            var result = cmdInstance.TabComplete(this.GetInputArgs());
             terminal.input.val(self.input);
             return result;
         }
@@ -85,35 +85,35 @@ Command.prototype.TabComplete = function(terminal, from_remote) {
     return [];
 }
 
-Command.prototype.getCmdInstance = function(cmdDefine) {
+Command.prototype.getCmdInstance = function (cmdDefine) {
     let cmdInstance = null;
     try {
         if (typeof cmdDefine == 'function') {
             cmdInstance = (new cmdDefine());
         } else if (typeof cmdDefine == 'string' && cmdDefine.trim()) {
-            cmdInstance = eval('new '+cmdDefine+'()');
+            cmdInstance = eval('new ' + cmdDefine + '()');
         } else {
             cmdInstance = cmdDefine;
         }
-    } catch (e) {}
-    
+    } catch (e) { }
+
     return cmdInstance;
 }
 
-Command.prototype.Exec = function(terminal, from_remote, callback) {
+Command.prototype.Exec = function (terminal, from_remote, callback) {
     var self = this;
     var shown_input = this.input;
     if (terminal.input.attr('type') === 'password') {
         shown_input = new Array(shown_input.length + 1).join("•");
     }
-    
+
     terminal.displayInput(shown_input);
     terminal.validator(self.name);
 
     let cmdInstance = self.getCmdInstance(terminal.all_commands[self.name]);
     // change simple options to normal options
     this.options = self.TransferSimpleOptions(cmdInstance);
-    var exec = function(instance, exec_type) {
+    var exec = function (instance, exec_type) {
         // exec this cmd
         if (instance.hasOwnProperty('subCmds')) {
             if (self.content.length > 0) {
@@ -152,8 +152,8 @@ Command.prototype.Exec = function(terminal, from_remote, callback) {
             item: {
                 'showType': 'background',
                 'cmds': [self.input],
-            }, 
-            callback: function(result) {
+            },
+            callback: function (result) {
                 let cmd_datas = result && result.hasOwnProperty('data') ? result.data : [];
                 if (cmd_datas.length > 0) {
                     for (let i in cmd_datas) {
@@ -171,12 +171,12 @@ Command.prototype.Exec = function(terminal, from_remote, callback) {
 
 }
 
-Command.prototype.InputParser = function(input_str) {
+Command.prototype.InputParser = function (input_str) {
     let string_arr = [];
     let str = "";
     let quote = "";
 
-    for (let i=0; i<input_str.length; i++) {
+    for (let i = 0; i < input_str.length; i++) {
         let chr = input_str.charAt(i);
         if (chr == " ") {
             // 如果不是引号中间出现的那么就进行分割
@@ -190,7 +190,7 @@ Command.prototype.InputParser = function(input_str) {
             // 如果是开头，则开始对字符串进行包裹
             if (!quote && str == "") {
                 quote = chr;
-            } else if (quote && quote == chr && input_str.charCodeAt(i-1) != 92) {  // 如果是结尾
+            } else if (quote && quote == chr && input_str.charCodeAt(i - 1) != 92) {  // 如果是结尾
                 str && string_arr.push(str);
                 quote = "";
                 str = "";
@@ -225,7 +225,7 @@ Command.prototype.InputParser = function(input_str) {
     }
 }
 
-Command.prototype.TransferSimpleOptions = function(cmdInstance, index) {
+Command.prototype.TransferSimpleOptions = function (cmdInstance, index) {
     index = typeof index == 'number' ? index : 0;
     var newOptions = {};
     if (this.content.length > index && cmdInstance.hasOwnProperty('subCmds') && cmdInstance.subCmds.hasOwnProperty(this.content[index])) {
@@ -235,9 +235,13 @@ Command.prototype.TransferSimpleOptions = function(cmdInstance, index) {
             var find = false;
             if (cmdInstance.hasOwnProperty('options')) {
                 for (let configOption in cmdInstance.options) {
-                    if (cmdInstance.options[configOption].hasOwnProperty('simple') && 
-                        cmdInstance.options[configOption].simple == inputOption) {
-                        newOptions[configOption] = this.options[inputOption];
+                    if (configOption == inputOption || (cmdInstance.options[configOption].hasOwnProperty('simple') &&
+                        cmdInstance.options[configOption].simple == inputOption)) {
+                        if (cmdInstance.options[configOption].hasOwnProperty("default") && this.options[inputOption] === true) {
+                            newOptions[configOption] = cmdInstance.options[configOption].default;
+                        } else {
+                            newOptions[configOption] = this.options[inputOption];
+                        }
                         find = true;
                         break;
                     }
@@ -264,7 +268,16 @@ Command.prototype.TransferSimpleOptions = function(cmdInstance, index) {
                     } else {
                         newOptions[opt] = true;
                     }
-                break;
+                    break;
+            }
+        }
+    }
+
+    // check the required option
+    for (let opt in cmdInstance.options) {
+        if (getPropertyVal(cmdInstance.options[opt], "required")) {
+            if (!newOptions.hasOwnProperty(opt)) {
+                throw 'Parameter <code>' + opt + '</code> is required.';
             }
         }
     }

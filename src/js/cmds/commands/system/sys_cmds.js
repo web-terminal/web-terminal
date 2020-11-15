@@ -1,6 +1,6 @@
-var lsCmd = function() {
+var lsCmd = function () {
     this.desc = 'Show the current commands or options.';
-    this.Exec = function(command, cmdwin) {
+    this.Exec = function (command, cmdwin) {
         let help = new helpCmd();
         let showStr = "";
         if (command.content.length > 0) {
@@ -16,18 +16,18 @@ var lsCmd = function() {
     }
 }
 
-var cdCmd = function() {
+var cdCmd = function () {
     this.desc = 'Change to the command space.';
-    this.Exec = function(command, cmdwin) {
+    this.Exec = function (command, cmdwin) {
         if (command.content.length > 0) {
             if (!command.content[0].trim()) {
                 cmdwin.setPrompt("$ ");
                 cmdwin.displayOutput("")
             } else if (cmdwin.all_commands.hasOwnProperty(command.content[0])) {
-                cmdwin.setPrompt("$"+command.content[0]+" ");
+                cmdwin.setPrompt("$" + command.content[0] + " ");
                 cmdwin.displayOutput("")
             } else {
-                cmdwin.displayErrorOutput("invalid command "+command.content[0]);
+                cmdwin.displayErrorOutput("invalid command " + command.content[0]);
             }
         } else {
             cmdwin.setPrompt("$ ");
@@ -36,7 +36,7 @@ var cdCmd = function() {
     }
 }
 
-var clearCmd = function() {
+var clearCmd = function () {
     this.options = {
         screen: {
             simple: "s",
@@ -49,27 +49,27 @@ var clearCmd = function() {
     }
     this.desc = 'clear datas. useage <code>clear</code>';
     this.defaultOption = 'screen';
-    this.Exec = function(command, cmdwin) {
+    this.Exec = function (command, cmdwin) {
         for (let option in command.options) {
             switch (option) {
-            case "screen":
-                // clear screen
-                cmdwin.clearScreen();
-            break;
-            case "history":
-                // clear history
-                cmdwin.cmd_stack.empty();
-                cmdwin.cmd_stack.reset();
-                cmdwin.displayOutput('Command history cleared. ');
-            break;
-            default:
-                cmdwin.displayOutput('Place use the right option.');
+                case "screen":
+                    // clear screen
+                    cmdwin.clearScreen();
+                    break;
+                case "history":
+                    // clear history
+                    cmdwin.cmd_stack.empty();
+                    cmdwin.cmd_stack.reset();
+                    cmdwin.displayOutput('Command history cleared. ');
+                    break;
+                default:
+                    cmdwin.displayOutput('Place use the right option.');
             }
         }
     }
 }
 
-var themeCmd = function() {
+var themeCmd = function () {
     this.options = {
         dark: {
             simple: "d",
@@ -83,13 +83,13 @@ var themeCmd = function() {
 
     this.desc = "Theme controller";
 
-    this.Exec = function(command, cmdwin) {
+    this.Exec = function (command, cmdwin) {
         cmdwin.invert();
         cmdwin.displayOutput('Shazam.');
     }
 }
 
-var talkCmd = function() {
+var talkCmd = function () {
     this.options = {
         enabled: {
             simple: "e",
@@ -107,7 +107,7 @@ var talkCmd = function() {
     this.defaultOption = "enabled";
     this.desc = "voice controller";
 
-    this.Exec = function(command, cmdwin) {
+    this.Exec = function (command, cmdwin) {
         if (!cmdwin.speech_synth_support) {
             cmdwin.displayOutput('You browser doesn\'t support speech synthesis.');
             return false;
@@ -132,7 +132,7 @@ var talkCmd = function() {
 
 }
 
-var curlCmd = function() {
+var curlCmd = function () {
     this.options = {
         user: {
             simple: "u",
@@ -160,7 +160,7 @@ var curlCmd = function() {
     };
     this.desc = "Usage: <code>curl http://api.xxx.com -u username:password -d `{\"field\": \"value\"}` -i </code> Or <code>curl http://api.xxx.com -u username:password -d k1=v1&k2=v2&k3=v3 -i</code>";
     this.defaultOption = "get";
-    this.Exec = function(command, cmdwin) {
+    this.Exec = function (command, cmdwin) {
         if (command.content.length < 1) {
             cmdwin.displayOutput("no url input.");
         } else {
@@ -220,19 +220,19 @@ var curlCmd = function() {
             }
             // ajax-request
             api_send_message({
-                type: 'ajax-request', 
+                type: 'ajax-request',
                 config: ajaxConfig,
-                callback: function(res) {
+                callback: function (res) {
                     if (command.options.hasOwnProperty('include')) {
                         window.TerminalWin.displayOutput('============================ Request ========================');
                         for (let option in ajaxConfig) {
                             if (typeof ajaxConfig[option] != 'string') {
                                 ajaxConfig[option] = JSON.stringify(ajaxConfig[option]);
                             }
-                            window.TerminalWin.displayOutput(option+': '+ajaxConfig[option], true);
+                            window.TerminalWin.displayOutput(option + ': ' + ajaxConfig[option], true);
                         }
                         window.TerminalWin.displayOutput('============================ Response ========================');
-                        window.TerminalWin.displayOutput('Status: '+res.data.xhr.status+' '+res.data.xhr.statusText);
+                        window.TerminalWin.displayOutput('Status: ' + res.data.xhr.status + ' ' + res.data.xhr.statusText);
                         // window.TerminalWin.displayOutput('TextStatus: '+res.data.xhr.status+' '+res.data.xhr.statusText, true);
                     }
 
@@ -243,7 +243,7 @@ var curlCmd = function() {
     }
 }
 
-var selectorCmd = function() {
+var selectorCmd = function () {
     this.options = {
         selector: {
             simple: "s",
@@ -311,32 +311,41 @@ var selectorCmd = function() {
     this.defaultOption = "current";
     this.desc = "Usage: <code>selector #id -t</code>";
 
-    this.Exec = function(command, cmdwin) {
+    this.Exec = function (command, cmdwin) {
         api_send_message({
             type: "selector",
             options: command.options,
             content: command.content,
-            callback: function(msg) {
+            callback: function (msg) {
                 cmdwin.displayOutput(msg.response);
             }
-        });     
+        });
     }
 }
 
-var helpCmd = function() {
+var helpCmd = function () {
     var self = this;
     this.desc = "Show the command how to use. eg: help"
-    this.printCmdDetail = function(cmd, commandConfig) {
+    this.printCmdDetail = function (cmd, commandConfig) {
         let showStr = '<div style="margin-left: 15px;">';
         // desc
         if (commandConfig.hasOwnProperty('desc'))
-            showStr += "<div>"+ (cmd ? cmd + ": " : '') + commandConfig.desc +"</div>";
+            showStr += "<div>" + (cmd ? cmd + ": " : '') + commandConfig.desc + "</div>";
         if (commandConfig.hasOwnProperty('options')) {
             for (let option in commandConfig.options) {
                 showStr += '<div style="margin-left: 15px;">'
-                showStr += '<span>'+(commandConfig.options[option].hasOwnProperty('simple') ? ('-'+commandConfig.options[option]['simple'][0]) : '&nbsp;&nbsp;')+'</span>'
-                showStr += '<span class="help-span">--'+option+'</span>'
-                showStr += '<span class="help-span">'+(commandConfig.options[option].hasOwnProperty('desc') ? commandConfig.options[option]['desc'] : '')+'</span>'
+                showStr += '<span>' + (commandConfig.options[option].hasOwnProperty('simple') ? ('-' + commandConfig.options[option]['simple'][0]) : '&nbsp;&nbsp;') + '</span>'
+                showStr += '<span class="help-span">--' + option + '</span>'
+                if (getPropertyVal(commandConfig.options[option], "required")) {
+                    showStr += '<span class="help-span red_highlight">Required</span>'
+                }
+                if (getPropertyVal(commandConfig.options[option], "dataType")) {
+                    showStr += '<span class="help-span green_highlight">dataType=' + commandConfig.options[option].dataType + '</span>'
+                }
+                if (commandConfig.options[option].hasOwnProperty('default')) {
+                    showStr += '<span class="help-span green_highlight">default=' + commandConfig.options[option].default + '</span>'
+                }
+                showStr += '<span class="help-span">' + (commandConfig.options[option].hasOwnProperty('desc') ? commandConfig.options[option]['desc'] : '') + '</span>'
                 showStr += '</div>'
             }
         }
@@ -345,27 +354,28 @@ var helpCmd = function() {
                 showStr += self.printCmdDetail(subcmd, commandConfig.subCmds[subcmd]);
             }
         }
-        
-        return showStr+'</div>';
+
+        return showStr + '</div>';
     }
 
-    this.printCmds = function(all_commands) {
+    this.printCmds = function (all_commands) {
         let showStr = "";
         for (let cmd in all_commands) {
-            showStr += '<span class="blue_highlight help-span">'+cmd+'</span>';
+            showStr += '<span class="blue_highlight help-span">' + cmd + '</span>';
         }
         return showStr;
     }
 
-    this.Exec = function(command, cmdwin) {
+    this.Exec = function (command, cmdwin) {
         let showStr = ''
         if (command.content.length > 0) {
             command.content.forEach(cmd => {
                 if (cmdwin.all_commands.hasOwnProperty(cmd)) {
-                    commandObject = new cmdwin.all_commands[cmd]();
+                    commandObject = cmdwin.command.getCmdInstance(cmdwin.all_commands[cmd]);
+                    // commandObject = new cmdwin.all_commands[cmd]();
                     showStr += this.printCmdDetail('', commandObject);
                 } else {
-                    showStr += cmdwin.getErrorOutput('the command "'+cmd+'" is invalid.')
+                    showStr += cmdwin.getErrorOutput('the command "' + cmd + '" is invalid.')
                 }
             });
         } else {
@@ -375,7 +385,7 @@ var helpCmd = function() {
     }
 }
 
-var timeCmd = function() {
+var timeCmd = function () {
     this.options = {
         timestamp: {
             simple: "t",
@@ -392,7 +402,7 @@ var timeCmd = function() {
     };
     this.desc = "Useage: <code>time `2020-07-04 14:00:00` -t</code>"
     this.defaultOption = "date";
-    this.Exec = function(command, cmdwin) {
+    this.Exec = function (command, cmdwin) {
         if (command.options.hasOwnProperty('timestamp')) {
             var timestamp = null;
             if (typeof command.options.timestamp != "boolean") {
@@ -402,7 +412,7 @@ var timeCmd = function() {
             } else {
                 timestamp = new Date().getTime()
             }
-            cmdwin.displayOutput(parseInt(timestamp/1000)+'');
+            cmdwin.displayOutput(parseInt(timestamp / 1000) + '');
         }
         if (command.options.hasOwnProperty('microtimestamp')) {
             var microtimestamp = null;
@@ -413,12 +423,12 @@ var timeCmd = function() {
             } else {
                 microtimestamp = new Date().getTime()
             }
-            cmdwin.displayOutput(microtimestamp+'');
+            cmdwin.displayOutput(microtimestamp + '');
         }
         if (command.options.hasOwnProperty('date')) {
-            let Pad = function(num, n, right) {
+            let Pad = function (num, n, right) {
                 var len = num.toString().length;
-                while(len < n) {
+                while (len < n) {
                     if (right) num = num + "0";
                     else num = "0" + num;
                     len++;
@@ -433,12 +443,12 @@ var timeCmd = function() {
             }
 
             var year = date.getFullYear();
-            var month = Pad(date.getMonth()+1, 2);    //js从0开始取 
-            var date1 = Pad(date.getDate(), 2); 
-            var hour = Pad(date.getHours(), 2); 
-            var minutes = Pad(date.getMinutes(), 2); 
+            var month = Pad(date.getMonth() + 1, 2);    //js从0开始取 
+            var date1 = Pad(date.getDate(), 2);
+            var hour = Pad(date.getHours(), 2);
+            var minutes = Pad(date.getMinutes(), 2);
             var second = Pad(date.getSeconds(), 2);
-            cmdwin.displayOutput(year+'-'+month+'-'+date1+' '+hour+':'+minutes+':'+second);
+            cmdwin.displayOutput(year + '-' + month + '-' + date1 + ' ' + hour + ':' + minutes + ':' + second);
         }
     }
 }

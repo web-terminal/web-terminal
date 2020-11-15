@@ -4,7 +4,7 @@ function api_getURL(url) {
 
 function api_getIcon(url, size) {
     if (!size) size = 16;
-    return "chrome://favicon/size/"+size+"@1x/" + url;
+    return "chrome://favicon/size/" + size + "@1x/" + url;
 }
 
 function api_locale_language() {
@@ -17,7 +17,7 @@ function api_tab_onupdated(callback) {
 }
 
 function api_tab_create(url, callback) {
-    let config = typeof url == 'object' ? url : {url: url};
+    let config = typeof url == 'object' ? url : { url: url };
     chrome.tabs.create(config, callback);
 }
 
@@ -30,7 +30,7 @@ function api_tab_update(tabId, data, callback) {
 }
 
 function api_tab_current(callback) {
-    api_tab_query({active: true, currentWindow: true}, callback);
+    api_tab_query({ active: true, currentWindow: true }, callback);
 }
 
 function api_tab_query(query, callback) {

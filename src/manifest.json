@@ -1,6 +1,6 @@
 {
   "name": "__MSG_appName__",
-  "version": "1.2.5",
+  "version": "1.2.6",
   "manifest_version": 2,
   "description": "__MSG_description__",
   "minimum_chrome_version": "21",
@@ -10,9 +10,9 @@
     "48": "icons/48.png",
     "128": "icons/128.png"
   },
-  "author" : {
-    "name" : "web-terminal",
-      "birth" : 2020
+  "author": {
+    "name": "web-terminal",
+    "birth": 2020
   },
   "browser_action": {
     "default_icon": {
@@ -23,25 +23,41 @@
     "default_popup": "popup.html"
   },
   "background": {
-    "scripts": ["js/libs/jquery-3.2.1.min.js", "js/libs/cron.min.js", "js/browser_api.js", "js/background.js"]
+    "scripts": [
+      "js/libs/jquery-3.2.1.min.js",
+      "js/libs/base.min.js",
+      "js/libs/cron.min.js",
+      "js/browser_api.js",
+      "js/background.js"
+    ]
   },
-  "web_accessible_resources": ["css/cmd.css"],
+  "web_accessible_resources": [
+    "css/cmd.css"
+  ],
   "content_scripts": [
-    { 
-      "matches": ["<all_urls>"], 
-      "all_frames": true, 
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "all_frames": true,
       "js": [
-        "js/libs/jquery-3.2.1.min.js", "js/browser_api.js", "js/content/message.js"
-      ], 
+        "js/libs/jquery-3.2.1.min.js",
+        "js/libs/base.min.js",
+        "js/browser_api.js",
+        "js/content/message.js"
+      ],
       "run_at": "document_start"
     },
-    { 
-      "matches": ["<all_urls>"], 
-      "all_frames": false, 
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "all_frames": false,
       "js": [
-        "js/content/content.js", "js/libs/minimist.min.js",
+        "js/content/content.js",
+        "js/libs/minimist.min.js",
         "js/cmd.js"
-      ], 
+      ],
       "run_at": "document_start"
     }
   ],
@@ -54,5 +70,13 @@
       "global": true
     }
   },
-  "permissions":["*://*/*", "<all_urls>", "tabs", "storage", "bookmarks", "notifications", "history"]
+  "permissions": [
+    "*://*/*",
+    "<all_urls>",
+    "tabs",
+    "storage",
+    "bookmarks",
+    "notifications",
+    "history"
+  ]
 }

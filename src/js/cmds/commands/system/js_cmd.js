@@ -1,4 +1,4 @@
-var jsCmd = function() {
+var jsCmd = function () {
     this.options = {
         current: {
             simple: ["c"],
@@ -8,25 +8,29 @@ var jsCmd = function() {
             simple: "u",
             desc: "Useage: <code>js `alert('hello web terminal.')` -u https://www.google.com</code> to exec js code at the specified url page."
         },
-        active_tab: {
-            simple: "a",
-            dataType: 'bool',
-            desc: "Useage: <code>js `alert('hello web terminal.')` -u https://www.google.com -a</code> to exec js code at the specified url page and active this page tab."
-        },
         file: {
             simple: "f",
             desc: "Useage: <code>js https://buttons.github.io/buttons.js -f</code> to exec js file at the specified page."
+        },
+        "delete-delay": {
+            simple: "d",
+            desc: "Useage: <code>js `alert('hello web terminal.')` -u https://www.google.com -d</code> to exec js code at the specified url page and delete this page tab when finished."
+        },
+        "active-open": {
+            simple: "a",
+            dataType: 'bool',
+            desc: "Useage: <code>js `alert('hello web terminal.')` -u https://www.google.com -a</code> to exec js code at the specified url page and active this page tab."
         }
     }
     this.desc = "This command is very powerful. you can use javascript code to finish your task, and jquery also be supported. eg: <code>js `$('#name').val('ok')` `var a = 1;` `alert(a);`</code>"
     this.Exec = (command, cmdwin) => {
-        let execjs = function(content) {
+        let execjs = function (content) {
             api_send_message({
                 type: "js",
                 options: command.options,
                 content: content,
                 feed_data: cmdwin.feed_data,
-                callback: function(msg) {
+                callback: function (msg) {
                     cmdwin.displayOutput(msg.response);
                 }
             });
@@ -41,9 +45,9 @@ var jsCmd = function() {
                     dataType: 'text'
                 }
                 api_send_message({
-                    type: 'ajax-request', 
+                    type: 'ajax-request',
                     config: ajaxConfig,
-                    callback: function(res) {
+                    callback: function (res) {
                         execjs([res.data.xhr.responseText]);
                     }
                 });
@@ -51,6 +55,6 @@ var jsCmd = function() {
         } else {
             execjs(command.content);
         }
-        
+
     }
 }

@@ -1,4 +1,4 @@
-var searchCmd = function()  {
+var searchCmd = function () {
     this.options = {
         google: {
             simple: "g",
@@ -13,7 +13,7 @@ var searchCmd = function()  {
         bing: {
             simple: "b",
             desc: "Use Bing search engine. Useage: <code>search text -b</code> or <code>search text --bing</code>",
-            url: "https://cn.bing.com/search?q="   
+            url: "https://cn.bing.com/search?q="
         }
     };
     this.desc = "Useage: <code>search text</code> use the google as the default search engine.";
@@ -25,14 +25,14 @@ var searchCmd = function()  {
                 nums++;
                 setTimeout(() => {
                     console.log(command.content)
-                    terminal.goToURL(encodeURI(this.options[option]['url']+command.content.join("")));
-                }, nums*300);
+                    terminal.goToURL(encodeURI(this.options[option]['url'] + command.content.join("")));
+                }, nums * 300);
             }
         }
     }
 }
 
-var translateCmd = function() {
+var translateCmd = function () {
     this.options = {
         google: {
             simple: "g",
@@ -58,15 +58,15 @@ var translateCmd = function() {
             if (this.options.hasOwnProperty(option)) {
                 nums++;
                 setTimeout(() => {
-                    terminal.goToURL(encodeURI(this.options[option]['url']+command.content.join("")));
-                }, nums*300);
+                    terminal.goToURL(encodeURI(this.options[option]['url'] + command.content.join("")));
+                }, nums * 300);
             }
         }
         terminal.displayOutput("");
     }
 }
 
-var jsonCmd = function() {
+var jsonCmd = function () {
     this.options = {
         "json-parser": {
             simple: "p",
@@ -118,7 +118,7 @@ var jsonCmd = function() {
                         url: configOption['url'],
                         value: command.content.join("")
                     },
-                    callback: function() {
+                    callback: function () {
                         if (configOption.hasOwnProperty('triggers')) {
                             for (let idx in configOption.triggers) {
                                 api_send_message({
@@ -136,34 +136,34 @@ var jsonCmd = function() {
             }
         }
         terminal.displayOutput("");
-        
+
     }
 }
 
-var browserCmd = function() {
+var browserCmd = function () {
     this.desc = "Browser related commands";
     this.subCmds = {
         tabs: {
             desc: "View the tabs opened by the browser.",
-            Exec: function(command, terminal) {
+            Exec: function (command, terminal) {
                 var query = {};
                 if (command.content.length > 0) {
-                    query.title = '*'+command.content[0]+'*';
+                    query.title = '*' + command.content[0] + '*';
                 }
                 api_send_message({
                     type: "browser-tabs",
-                    options: {query: query, type: 'query'},
-                    callback: function(msg) {
+                    options: { query: query, type: 'query' },
+                    callback: function (msg) {
                         let results = msg.data;
                         let showStr = "<style>div.tab{margin: 3px 0px;} div.tab a.active{color: green;} div.tab img{margin-top: -5px;vertical-align: middle;}</style>";
                         results.forEach(tab => {
-                            showStr += "<div class='tab' data-type='tabs'>"+(terminal.is_extension_page ? "<img src='"+api_getIcon(tab.url)+"'>" : "")+" <a data-tab-id='"+tab.id+"' class='"+(tab.active ? 'active' : '')+"'>"+tab.title+"</a></div>";
+                            showStr += "<div class='tab' data-type='tabs'>" + (terminal.is_extension_page ? "<img src='" + api_getIcon(tab.url) + "'>" : "") + " <a data-tab-id='" + tab.id + "' class='" + (tab.active ? 'active' : '') + "'>" + tab.title + "</a></div>";
                         });
                         terminal.displayOutput(showStr ? showStr : 'No result.');
-                        terminal.options.selector.find('.cmd-output [data-type="tabs"] a[data-tab-id]').off('click').on('click', function() {
+                        terminal.options.selector.find('.cmd-output [data-type="tabs"] a[data-tab-id]').off('click').on('click', function () {
                             api_send_message({
                                 type: "browser-tabs",
-                                options: {tabId: $(this).data('tab-id'), type: 'update', updateProperties: {active: true}}
+                                options: { tabId: $(this).data('tab-id'), type: 'update', updateProperties: { active: true } }
                             })
                         })
                     }
@@ -172,16 +172,16 @@ var browserCmd = function() {
         },
         bookmark: {
             desc: "Browser bookmark <code>browser bookmark</code> or <code>browser bookmark 'query'</code>",
-            Exec: function(command, terminal) {
+            Exec: function (command, terminal) {
                 if (command.content.length > 0) {
                     api_send_message({
                         type: "browser-bookmarks",
-                        options: {query: command.content[0], type: 'query'},
-                        callback: function(msg) {
+                        options: { query: command.content[0], type: 'query' },
+                        callback: function (msg) {
                             let results = msg.data;
                             let showStr = "<span class='green_highlight'>Search result:</span>";
                             results.forEach(element => {
-                                showStr += "<div><a target='_blank' href='"+element.url+"'>"+element.title+"</a></div>";
+                                showStr += "<div><a target='_blank' href='" + element.url + "'>" + element.title + "</a></div>";
                             });
                             terminal.displayOutput(showStr ? showStr : 'No result.')
                         }
@@ -189,12 +189,12 @@ var browserCmd = function() {
                 } else {
                     api_send_message({
                         type: "browser-bookmarks",
-                        options: {numberOfItems: 15, type: 'getRecent'},
-                        callback: function(msg) {
+                        options: { numberOfItems: 15, type: 'getRecent' },
+                        callback: function (msg) {
                             let results = msg.data;
                             let showStr = "<span class='green_highlight'>Recent 15: </span>";
                             results.forEach(element => {
-                                showStr += "<div><a target='_blank' href='"+element.url+"'>"+element.title+"</a></div>";
+                                showStr += "<div><a target='_blank' href='" + element.url + "'>" + element.title + "</a></div>";
                             });
                             terminal.displayOutput(showStr ? showStr : 'No result.')
                         }
@@ -204,16 +204,16 @@ var browserCmd = function() {
         },
         history: {
             desc: "Browser history <code>browser history</code> or <code>browser history 'query'</code>",
-            Exec: function(command, terminal) {
+            Exec: function (command, terminal) {
                 api_send_message({
                     type: "browser-history",
-                    options: {text: command.content.length > 0 ? command.content[0] : '', maxResults: 20},
-                    callback: function(msg) {
+                    options: { text: command.content.length > 0 ? command.content[0] : '', maxResults: 20 },
+                    callback: function (msg) {
                         console.log("callback msg: ", msg)
                         let results = msg.data;
                         let showStr = "<span class='green_highlight'>Search result in the past 24 hours:</span>";
                         results.forEach(element => {
-                            showStr += "<div><a target='_blank' href='"+element.url+"'>"+element.title+"</a></div>";
+                            showStr += "<div><a target='_blank' href='" + element.url + "'>" + element.title + "</a></div>";
                         });
                         terminal.displayOutput(showStr ? showStr : 'No result.')
                     }
@@ -250,9 +250,9 @@ var browserCmd = function() {
                     desc: "Alternate notification content with a lower-weight font.",
                 }
             },
-            Exec: function(command, terminal) {
+            Exec: function (command, terminal) {
                 // todo valid required params
-                api_send_message({type: "browser-notifications", options: command.options});
+                api_send_message({ type: "browser-notifications", options: command.options });
                 terminal.displayOutput("")
             }
         }
