@@ -577,8 +577,8 @@ function htmlEncode(str) {
     var serialExec = function (output, i) {
       if (i < command_list.length) {
         (new Promise(function (resolve, reject) {
-          self.feed_data = output;
           try {
+            self.feed_data = window.btoa(encodeURIComponent(output));
             self.ExecCommands(command_list[i], from_remote);
             // 等待命令返回结果
             var times = 0;
