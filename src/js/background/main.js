@@ -17,7 +17,7 @@ api_runtime_on_message_listener(function (message, sender, callback) {
         case "selector":
             let sendMessage = function (tab) {
                 if (message.type == 'js') {
-                    let content = (message.feed_data ? "var TerminalFeedArgs=" + message.feed_data + ";" : '') + message.content.join('')
+                    let content = (message.feed_data ? "var TerminalFeedArgs=decodeURIComponent(window.atob('" + message.feed_data + "'));" : '') + message.content.join('')
                     api_execute_script(tab.id, { code: content }, function (result) {
                         for (let i in result) {
                             let callbackMessage = message;
