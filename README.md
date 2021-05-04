@@ -3,7 +3,7 @@ Provide some convenient instructions to operate the browser, so that we can cust
 
 https://github.com/web-terminal/web-terminal/wiki
 
-chrome extension: https://chrome.google.com/webstore/detail/web-terminal/djnneaagmekpmmbmeicecdkgcnkcnhle
+chrome extension: https://chrome.google.com/webstore/detail/webterminal/ffbkecdpjcbnddfmkccojhedijhkealk
 
 ## Start
 
